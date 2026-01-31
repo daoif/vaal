@@ -1,10 +1,36 @@
 # VAAL 配置说明
 
-配置文件位置：`.vaal/config.json`
+配置文件位置：`.vaal/_workspace/exec/config.json`
 
 ---
 
 ## 配置项
+
+### paths - 资源路径配置
+
+所有路径都相对于 `.vaal/` 目录，可以根据项目需求自定义。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `tasks` | string | `_workspace/exec/tasks.md` | 任务列表文件 |
+| `progress` | string | `_workspace/exec/progress.txt` | 执行进度记录文件 |
+| `projectConstraints` | string | `_workspace/exec/project-constraints.md` | 项目级约束文件 |
+| `moduleConstraints` | string | `_workspace/split/design/modules` | 模块约束目录 |
+
+> **提示**：如果项目根目录已有 `AGENTS.md`、`CLAUDE.md` 等文件，系统会自动检测并作为项目约束使用。
+
+示例：
+```json
+{
+  "paths": {
+    "tasks": "_workspace/exec/tasks.md",
+    "projectConstraints": "../AGENTS.md",
+    "moduleConstraints": "_workspace/split/design/modules"
+  }
+}
+```
+
+---
 
 ### validation - 验证配置
 
@@ -56,36 +82,24 @@ commitStyle 可选值：
 
 ---
 
-### execution - 执行配置
+### pipeline / slots - 执行流程配置
 
-| 字段 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `tool` | string | "codex" | AI 工具 (codex/claude/custom) |
-| `toolCommand` | string | - | 自定义工具时的命令 |
-| `maxIterations` | number | 50 | 最大任务数限制 |
-| `stopOnFailure` | boolean | true | 验证失败时停止 |
-| `delayBetweenTasks` | number | 2000 | 任务间隔（毫秒） |
+高级配置，用于自定义执行流程和槽位脚本。
 
-示例：
-```json
-{
-  "execution": {
-    "tool": "codex",
-    "maxIterations": 50,
-    "stopOnFailure": true
-  }
-}
-```
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `pipeline.global` | string[] | 全局阶段槽位 |
+| `pipeline.loop` | string[] | 循环阶段槽位 |
+| `pipeline.finally` | string[] | 结束阶段槽位 |
+| `slots` | object | 槽位名到脚本路径的映射 |
 
 ---
 
-### 任务相关
+### 其他配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `taskFormat` | string | "markdown" | 任务格式 (markdown/csv) |
-| `taskPath` | string | "tasks.md" | 任务列表文件路径 |
-| `progressPath` | string | "progress.txt" | 进度记录文件路径 |
+| `maxIterations` | number | 50 | 最大任务数限制 |
 
 ---
 
@@ -93,6 +107,11 @@ commitStyle 可选值：
 
 ```json
 {
+  "paths": {
+    "tasks": "_workspace/exec/tasks.md",
+    "projectConstraints": "_workspace/exec/project-constraints.md",
+    "moduleConstraints": "_workspace/split/design/modules"
+  },
   "validation": {
     "test": "npm test",
     "lint": "npm run lint",
@@ -103,14 +122,6 @@ commitStyle 可选值：
     "autoPush": false,
     "commitStyle": "conventional"
   },
-  "execution": {
-    "tool": "codex",
-    "maxIterations": 50,
-    "stopOnFailure": true,
-    "delayBetweenTasks": 2000
-  },
-  "taskFormat": "markdown",
-  "taskPath": "tasks.md",
-  "progressPath": "progress.txt"
+  "maxIterations": 50
 }
 ```

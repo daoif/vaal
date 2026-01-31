@@ -62,11 +62,11 @@ async function main() {
     // 查找 VAAL 根目录（包含 exec 目录的目录）
     let vaalRoot = path.resolve(__dirname, '../..');
 
-    // 检查 _workspace/config.json 是否存在
-    const configPath = path.join(vaalRoot, '_workspace', 'config.json');
+    // 检查 _workspace/exec/config.json 是否存在
+    const configPath = path.join(vaalRoot, '_workspace', 'exec', 'config.json');
     if (!fs.existsSync(configPath)) {
-        console.error('[VAAL] 错误: 找不到 _workspace/config.json');
-        console.error('[VAAL] 请先运行初始化流程');
+        console.error('[VAAL] 错误: 找不到 _workspace/exec/config.json');
+        console.error('[VAAL] 请先运行: node .vaal/init/scripts/setup.js');
         process.exit(1);
     }
 
@@ -85,10 +85,23 @@ async function main() {
     // 获取 pipeline 和 slots
     const pipeline = config.pipeline || {
         global: ['init', 'loadTasks'],
-        loop: ['readNext', 'execute', 'validate', 'git', 'markDone'],
+        loop: ['readNext', 'loadConstraints', 'execute', 'validate', 'git', 'markDone'],
         finally: ['report']
     };
-    const slots = config.slots || {};
+
+    // 默认槽位映射（用户可在 config.json 中覆盖）
+    const defaultSlots = {
+        init: 'exec/slots/init.js',
+        loadTasks: 'exec/slots/load-tasks.js',
+        readNext: 'exec/slots/read-next.js',
+        loadConstraints: 'exec/slots/load-constraints.js',
+        execute: 'exec/slots/codex.js',
+        validate: 'exec/slots/validate.js',
+        git: 'exec/slots/git.js',
+        markDone: 'exec/slots/mark-done.js',
+        report: 'exec/slots/report.js'
+    };
+    const slots = { ...defaultSlots, ...(config.slots || {}) };
 
     // ========== 全局阶段 ==========
     console.log('[VAAL] === 全局阶段 ===');

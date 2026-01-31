@@ -1,0 +1,38 @@
+{
+    "split": {
+        "execution": {
+            "tool": "codex"
+        },
+        "paths": {
+            "design": "_workspace/split/design/original.md",
+            "modules": "_workspace/split/modules",
+            "tasksDraft": "_workspace/split/tasks-draft",
+            "userStories": "_workspace/split/user-stories.md",
+            "report": "_workspace/split/report.md",
+            "tasksOutput": "_workspace/exec/tasks.md"
+        },
+        "templates": {
+            "parseModules": "split/templates/parse-modules-prompt.md",
+            "genTasks": "split/templates/gen-tasks-prompt.md",
+            "genUserStories": "split/templates/gen-user-stories-prompt.md"
+        }
+    },
+    "pipeline": {
+        "global": ["getDesign", "parseModules", "loadModules"],
+        "loop": ["genTasks", "validateFormat"],
+        "finally": ["mergeTasks", "sortDeps", "checkConsist1", "genUserStories", "checkConsist2", "report"]
+    },
+    "slots": {
+        "getDesign": "split/slots/get-design.js",
+        "parseModules": "split/slots/parse-modules.js",
+        "loadModules": "split/slots/load-modules.js",
+        "genTasks": "split/slots/gen-tasks.js",
+        "validateFormat": "split/slots/validate-format.js",
+        "mergeTasks": "split/slots/merge-tasks.js",
+        "sortDeps": "split/slots/sort-deps.js",
+        "checkConsist1": "split/slots/check-consist1.js",
+        "genUserStories": "split/slots/gen-user-stories.js",
+        "checkConsist2": "split/slots/check-consist2.js",
+        "report": "split/slots/report.js"
+    }
+}

@@ -1,89 +1,81 @@
+<div align="center">
+
+<!-- LOGO -->
+<img src="_dev/assets/LOGO.png" alt="VAAL Logo" width="120" />
+
 # VAAL
 
-**V**-**A**I-**A**uto-**L**oop - AI 自动化任务循环工具
+**V**-**A**I-**A**uto-**L**oop
+
+AI 自动化任务循环工具
+
+[![Version](https://img.shields.io/badge/version-v0.0.1-blue.svg)](https://github.com/daoif/vaal)
+[![Node](https://img.shields.io/badge/node-%3E%3D14-green.svg)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
+
+</div>
+
+---
 
 ## 简介
 
-VAAL 是一个帮助开发者自动化完成大量编码任务的工具。它通过调用 AI CLI（如 Codex、Claude）循环执行任务列表，每完成一个任务就进行验证和 Git 提交。
+VAAL 帮助开发者自动化完成编码任务。通过调用 AI CLI（Codex、Claude 等）循环执行任务列表，每完成一个任务就自动验证和 Git 提交。
 
-## 核心理念
+**核心特性：**
+- **零依赖** - 只需 Node.js，无需 npm install
+- **槽位架构** - 10 个预制槽位脚本，开箱即用，按需替换
+- **三层约束** - 项目/模块/任务级约束，自动合并传递给 AI
+- **依赖检查** - 自动检测任务依赖，按正确顺序执行
+- **AI 引导** - 文档驱动，让 AI 读取文档引导你完成配置
+- **进度追踪** - progress.txt 记录执行历史和耗时
 
-1. **每任务独立会话** - 避免上下文累积导致的混淆
-2. **文件系统作为状态存储** - 任务列表和进度通过文件传递
-3. **验证门控** - 每个任务必须通过验证才能继续
+## 快速开始
 
-## 安装
+> **你不需要看任何文档。** 只需复制下面的提示词发给AI，AI会读取文档并引导你完成一切。
 
-```bash
-# 克隆到项目子目录
-git clone https://github.com/xxx/vaal.git .vaal
-```
-
-## 使用
-
-### 1. 初始化
-
-在 IDE 中对 AI 说：
+### 提示词1：安装与初始化
 
 ```
-请帮我初始化 VAAL（读取 .vaal/exec/docs/GUIDE.md）
+git clone https://github.com/daoif/vaal.git .vaal
+然后读取 .vaal/init/docs/GUIDE.md，帮我完成初始化配置。
 ```
 
-AI 会引导你完成配置。
-
-### 2. 创建任务列表
-
-编辑 `.vaal/_workspace/tasks.md`：
-
-```markdown
-- [ ] 添加用户登录功能
-- [ ] 添加用户注册功能
-- [ ] 添加密码重置功能
-```
-
-### 3. 运行
-
-```bash
-node .vaal/exec/scripts/run.js
-```
-
-## 目录结构
+### 提示词2：拆分任务
 
 ```
-.vaal/
-├── split/               # 拆分任务功能
-│   ├── docs/            # 拆分相关文档
-│   ├── scripts/         # 拆分脚本（未来扩展）
-│   └── templates/       # 任务/约束模板
-│
-├── exec/                # 执行任务功能
-│   ├── docs/            # 执行相关文档
-│   ├── scripts/         # 执行脚本 (run.js)
-│   ├── slots/           # 槽位脚本
-│   └── templates/       # 配置模板
-│
-├── _dev/                # VAAL 开发文档
-│
-└── _workspace/          # 运行时目录（动态生成）
-    ├── config.json      # 用户配置
-    ├── tasks.md         # 任务列表
-    ├── progress.txt     # 进度记录
-    └── design/          # 设计文档存档
+读取 .vaal/split/docs/GUIDE.md，帮我拆分任务。
 ```
+
+### 提示词3：执行任务
+
+```
+读取 .vaal/exec/docs/GUIDE.md，帮我执行任务。
+```
+
+> 就这3句话。复制 → 粘贴给AI → AI自动引导你。
+
+## 依赖要求
+
+| 依赖 | 说明 |
+|------|------|
+| **Node.js** | 运行脚本 |
+| **Git** | 自动提交 |
+| **AI CLI** | 执行任务 |
+
+**已支持的 AI CLI：**
+- [Codex](https://github.com/openai/codex) (OpenAI)
+- [Claude Code](https://github.com/anthropics/claude-code) (Anthropic)
+
+> 其他 CLI 可自行扩展，欢迎提 [Issue](https://github.com/daoif/vaal/issues) 或 [PR](https://github.com/daoif/vaal/pulls)。
 
 ## 文档
 
-### 执行任务
-- [初始化引导](exec/docs/GUIDE.md)
-- [配置说明](exec/docs/CONFIG.schema.md)
-- [使用指南](exec/docs/USAGE.md)
-
-### 拆分任务
-- [拆分引导](split/docs/GUIDE.md)
-- [约束格式](split/docs/CONSTRAINT.schema.md)
-
-### 开发
-- [设计文档](_dev/DESIGN.md)
+| 类别 | 文档 |
+|------|------|
+| **入门** | [初始化引导](init/docs/GUIDE.md) |
+| **配置** | [配置说明](exec/docs/CONFIG.schema.md) |
+| **任务** | [拆分引导](split/docs/GUIDE.md) |
+| **高级** | [设计文档](_dev/DESIGN.md) |
 
 ## 许可证
 

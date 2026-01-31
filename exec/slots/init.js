@@ -11,11 +11,14 @@ module.exports = async function (context) {
 
     // 配置已在调度器中加载，这里做额外初始化
     context.stats = {
-        startTime: new Date().toISOString(),
+        startTime: new Date(),
         completed: 0,
         failed: 0,
         skipped: 0
     };
+
+    // 任务执行记录（用于 progress.txt）
+    context.taskRecords = [];
 
     // 项目根目录
     context.projectRoot = context._projectRoot;

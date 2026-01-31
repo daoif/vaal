@@ -17,6 +17,9 @@ module.exports = async function (context) {
         return { break: true };
     }
 
+    // 记录任务开始时间（用于计算耗时）
+    nextTask._startTime = new Date();
+
     context.currentTask = nextTask;
     console.log(`  → 当前任务: ${nextTask.task.substring(0, 50)}...`);
 

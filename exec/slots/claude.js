@@ -12,7 +12,11 @@ module.exports = async function (context) {
     const task = context.currentTask;
     if (!task) return {};
 
-    const prompt = task.task;
+    // 组合任务描述和约束提示
+    let prompt = task.task;
+    if (context.constraintPrompt) {
+        prompt += context.constraintPrompt;
+    }
 
     // 转义特殊字符
     const escapedPrompt = prompt
@@ -25,6 +29,9 @@ module.exports = async function (context) {
     const command = `claude --dangerously-skip-permissions "${escapedPrompt}"`;
 
     console.log(`  → 执行: claude --dangerously-skip-permissions ...`);
+    if (context.constraintPrompt) {
+        console.log(`  → 已附加约束提示`);
+    }
 
     try {
         const { stdout, stderr } = await execAsync(command, {

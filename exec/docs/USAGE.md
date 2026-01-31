@@ -6,23 +6,33 @@
 
 ```bash
 cd your-project
-git clone https://github.com/xxx/vaal.git .vaal
+git clone https://github.com/daoif/vaal.git .vaal
 ```
 
 ### 方式二：Git Submodule
 
 ```bash
-git submodule add https://github.com/xxx/vaal.git .vaal
+git submodule add https://github.com/daoif/vaal.git .vaal
 ```
 
 ---
 
 ## 初始化
 
+### 步骤 1：运行初始化脚本
+
+```bash
+node .vaal/init/scripts/setup.js
+```
+
+这会创建 `_workspace` 目录结构和默认配置文件。
+
+### 步骤 2：配置（可选）
+
 在 IDE 中对 AI 说：
 
 ```
-帮我初始化 VAAL（读取 .vaal/docs/INIT.guide.md）
+帮我初始化 VAAL（读取 .vaal/init/docs/GUIDE.md）
 ```
 
 AI 会引导你完成以下配置：
@@ -30,13 +40,13 @@ AI 会引导你完成以下配置：
 2. Git 策略（commit、push）
 3. AI 工具选择
 
-完成后会生成 `.vaal/config.json`。
+配置文件位置：`.vaal/_workspace/exec/config.json`
 
 ---
 
 ## 创建任务列表
 
-编辑 `.vaal/tasks.md`：
+编辑 `.vaal/_workspace/exec/tasks.md`：
 
 ### Markdown 格式
 
@@ -52,23 +62,12 @@ AI 会引导你完成以下配置：
 - [x] 创建用户模型
 ```
 
-### CSV 格式
-
-如果你选择了 CSV 格式，编辑 `.vaal/tasks.csv`：
-
-```csv
-id,task,status,notes
-1,添加用户登录 API,pending,
-2,添加用户注册 API,pending,
-3,添加密码重置功能,pending,
-```
-
 ---
 
 ## 运行
 
 ```bash
-node .vaal/scripts/run.js
+node .vaal/exec/scripts/run.js
 ```
 
 脚本会：
@@ -118,7 +117,7 @@ node .vaal/scripts/run.js
 如果验证命令失败，脚本会：
 1. 停止执行
 2. 保留当前状态
-3. 输出错误信息到 `progress.txt`
+3. 输出错误信息
 
 你需要：
 1. 查看错误信息
@@ -144,8 +143,20 @@ node .vaal/scripts/run.js
 
 ### Q: 如何修改配置？
 
-直接编辑 `.vaal/config.json`。
+直接编辑 `.vaal/_workspace/exec/config.json`。
 
-### Q: 如何查看执行历史？
+### Q: 如何切换 AI 工具？
 
-查看 `.vaal/progress.txt`。
+在配置文件中修改 `slots.execute`：
+
+```json
+{
+  "slots": {
+    "execute": "exec/slots/claude.js"
+  }
+}
+```
+
+可选值：
+- `exec/slots/codex.js` - OpenAI Codex CLI
+- `exec/slots/claude.js` - Anthropic Claude CLI

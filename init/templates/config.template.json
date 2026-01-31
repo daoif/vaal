@@ -27,6 +27,12 @@
         "markDone": "exec/slots/mark-done.js",
         "report": "exec/slots/report.js"
     },
+    "paths": {
+        "tasks": "_workspace/exec/tasks.md",
+        "progress": "_workspace/exec/progress.txt",
+        "projectConstraints": "_workspace/exec/project-constraints.md",
+        "moduleConstraints": "_workspace/split/design/modules"
+    },
     "validation": {
         "test": "npm test",
         "lint": "npm run lint",
@@ -39,6 +45,5 @@
         "autoPush": false,
         "commitStyle": "conventional"
     },
-    "taskPath": "_workspace/tasks.md",
     "maxIterations": 50
 }
