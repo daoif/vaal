@@ -1,0 +1,44 @@
+{
+    "pipeline": {
+        "global": [
+            "init",
+            "loadTasks"
+        ],
+        "loop": [
+            "readNext",
+            "loadConstraints",
+            "execute",
+            "validate",
+            "git",
+            "markDone"
+        ],
+        "finally": [
+            "report"
+        ]
+    },
+    "slots": {
+        "init": "exec/slots/init.js",
+        "loadTasks": "exec/slots/load-tasks.js",
+        "readNext": "exec/slots/read-next.js",
+        "loadConstraints": "exec/slots/load-constraints.js",
+        "execute": "exec/slots/codex.js",
+        "validate": "exec/slots/validate.js",
+        "git": "exec/slots/git.js",
+        "markDone": "exec/slots/mark-done.js",
+        "report": "exec/slots/report.js"
+    },
+    "validation": {
+        "test": "npm test",
+        "lint": "npm run lint",
+        "required": [
+            "test"
+        ]
+    },
+    "git": {
+        "autoCommit": true,
+        "autoPush": false,
+        "commitStyle": "conventional"
+    },
+    "taskPath": "_workspace/tasks.md",
+    "maxIterations": 50
+}
