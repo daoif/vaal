@@ -91,7 +91,7 @@ node .vaal/exec/scripts/run.js
 
 | 配置项 | 说明 |
 |--------|------|
-| `execution.tool` | AI CLI 工具（codex/claude/自定义） |
+| `slots.execute` | AI 执行槽位脚本（`exec/slots/codex.js` / `exec/slots/claude.js` / 自定义） |
 | `validation.test` | 测试命令 |
 | `validation.lint` | Lint 命令 |
 | `git.autoCommit` | 是否自动提交 |

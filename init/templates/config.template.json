@@ -39,7 +39,7 @@
         "required": []
     },
     "git": {
-        "autoCommit": true,
+        "autoCommit": false,
         "autoPush": false,
         "commitStyle": "conventional"
     },

@@ -57,10 +57,9 @@
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `autoCommit` | boolean | true | 任务完成后自动 commit |
+| `autoCommit` | boolean | false | 任务完成后自动 commit |
 | `autoPush` | boolean | false | commit 后自动 push |
 | `commitStyle` | string | "conventional" | 提交信息风格 |
-| `includeTaskId` | boolean | true | 提交信息包含任务ID |
 
 commitStyle 可选值：
 - `conventional` - feat(scope): message
@@ -71,7 +70,7 @@ commitStyle 可选值：
 ```json
 {
   "git": {
-    "autoCommit": true,
+    "autoCommit": false,
     "autoPush": false,
     "commitStyle": "conventional"
   }
@@ -116,7 +115,7 @@ commitStyle 可选值：
     "required": ["test"]
   },
   "git": {
-    "autoCommit": true,
+    "autoCommit": false,
     "autoPush": false,
     "commitStyle": "conventional"
   },

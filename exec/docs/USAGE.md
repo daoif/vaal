@@ -27,7 +27,7 @@ node .vaal/init/scripts/setup.js
 
 这会创建 `_workspace` 目录结构和默认配置文件。
 
-### 步骤 2：配置（可选）
+### 步骤 2：配置确认（推荐，首次接入建议完成）
 
 在 IDE 中对 AI 说：
 
@@ -35,7 +35,7 @@ node .vaal/init/scripts/setup.js
 帮我初始化 VAAL（读取 .vaal/init/docs/GUIDE.md）
 ```
 
-AI 会引导你完成以下配置：
+AI 会基于“默认值 + 脚本探查值 + 与你确认后的最终值”完善并写回配置，重点确认：
 1. 验证命令（test、lint）
 2. Git 策略（commit、push）
 3. AI 工具选择

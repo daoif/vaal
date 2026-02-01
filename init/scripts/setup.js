@@ -189,7 +189,9 @@ const config = {
         required: []
     },
     git: {
-        autoCommit: true,
+        // 默认安全：避免在用户未确认策略时自动提交
+        // （尤其是中途接入已有项目时，自动提交可能带来意外变更）
+        autoCommit: false,
         autoPush: false,
         commitStyle: 'conventional'
     },
@@ -197,7 +199,15 @@ const config = {
     // 保存探查结果供 AI 参考
     _probe: {
         repoType: probe.repoType,
-        techStack: probe.techStack
+        techStack: probe.techStack,
+        hasGit: probe.hasGit,
+        hasCommits: probe.hasCommits,
+        hasDocsDir: probe.hasDocsDir,
+        hasSrcDir: probe.hasSrcDir,
+        detectedValidation: {
+            test: '',
+            lint: ''
+        }
     }
 };
 
@@ -221,6 +231,9 @@ if (probe.techStack === 'python') {
     config.validation.test = 'cargo test';
     config.validation.lint = 'cargo clippy';
 }
+
+config._probe.detectedValidation.test = config.validation.test;
+config._probe.detectedValidation.lint = config.validation.lint;
 
 // 默认只在确实检测到测试命令时才把 test 设为“必需”
 config.validation.required = config.validation.test ? ['test'] : [];
@@ -257,12 +270,14 @@ if (!fs.existsSync(tasksPath)) {
 
 ## 待完成
 
-- [ ] [IMPL-001] 示例任务（请替换为你的任务）
-  
-  **关联模块:** 模块名称
-  
+<!--
+在这里添加任务，例如：
+- [ ] [IMPL-001] 任务描述
+  **关联模块:** module-name
+  **依赖:** IMPL-000（可选）
   **硬约束:**
-  - 示例约束
+  - 约束 1
+-->
 
 ## 已完成
 <!-- 完成的任务会被移到这里 -->
@@ -277,23 +292,23 @@ if (!fs.existsSync(tasksPath)) {
 // Step 4: 输出下一步建议
 // ============================================================
 
-console.log('\n[VAAL] ✅ 初始化完成！\n');
+console.log('\n[VAAL] ✅ VAAL 工作区已就绪（已生成配置草案）\n');
+console.log('下一步（推荐）：在 IDE 中对 AI 说：');
+console.log('  "帮我初始化 VAAL（读取 .vaal/init/docs/GUIDE.md）"');
+console.log('AI 会基于三层信息完善配置：');
+console.log('  1) VAAL 默认值（探查不到时的保底）');
+console.log('  2) 脚本探查值（已自动写入 config.json 的 _probe）');
+console.log('  3) 与你确认后的最终值（AI 会写回 config.json）');
+console.log('');
+console.log('当前草案要点（供快速确认）：');
+console.log(`  - AI 工具: 默认 codex（可切换 claude）`);
+console.log(`  - 验证命令: test="${config.validation.test || ''}", lint="${config.validation.lint || ''}"`);
+console.log(`  - Git 策略: autoCommit=${config.git.autoCommit}, autoPush=${config.git.autoPush}`);
+console.log('');
 
-// 根据仓库类型给出不同建议
-if (probe.repoType === 'A') {
-    console.log('检测到这是一个空仓库。建议：');
-    console.log('  1. 先初始化项目骨架');
-    console.log('  2. 创建设计文档');
-    console.log('  3. 使用 VAAL 拆分任务');
-} else if (probe.repoType === 'B') {
-    console.log('检测到项目有文档但无代码。建议：');
-    console.log('  1. 对 AI 说"帮我拆分任务"');
-    console.log('  2. 或手动编辑 .vaal/_workspace/exec/tasks.md');
-} else {
-    console.log('下一步：');
-    console.log('  1. 编辑 .vaal/_workspace/exec/tasks.md 添加任务');
-    console.log('  2. 运行 node .vaal/exec/scripts/run.js 开始执行');
-}
+console.log('配置确认完成后：');
+console.log('  1) 编辑 .vaal/_workspace/exec/tasks.md 添加任务');
+console.log('  2) 运行 node .vaal/exec/scripts/run.js 开始执行');
 
 console.log('\n如需修改配置，编辑 .vaal/_workspace/exec/config.json');
 console.log('');
