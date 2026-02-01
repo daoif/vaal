@@ -12,7 +12,9 @@ AI 自动化任务循环工具
 [![Version](https://img.shields.io/badge/version-v0.0.2-blue.svg)](https://github.com/daoif/vaal)
 [![Node](https://img.shields.io/badge/node-%3E%3D14-green.svg)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
-
+<p align="center">
+  💬 <a href="https://qm.qq.com/q/AHUKoyLVKg">QQ 交流群: 993975349</a>
+</p>
 </div>
 
 ---
