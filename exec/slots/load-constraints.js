@@ -1,10 +1,10 @@
 /**
  * VAAL 槽位脚本：加载约束
- * 
+ *
  * 职责：从项目/模块/任务三个层级加载约束，合并后传递给后续槽位
- * 
+ *
  * 约束层级（从上到下合并）：
- * 1. 项目级约束 - 来自 config.paths.projectConstraints 或项目根目录的 AGENTS.md
+ * 1. 项目级约束 - 固定来自 .vaal/_workspace/exec/project-constraints.md
  * 2. 模块级约束 - 来自 config.paths.moduleConstraints 目录下的模块文件
  * 3. 任务级约束 - 嵌入在任务描述中
  */
@@ -97,38 +97,23 @@ function extractModuleName(content) {
  * 加载项目级约束
  */
 function loadProjectConstraints(context) {
-    const config = context._config;
-    const paths = config.paths || {};
+    const projectConstraintsPath = path.resolve(
+        context._vaalRoot,
+        '_workspace/exec/project-constraints.md'
+    );
 
-    // 尝试的路径顺序
-    const candidates = [];
-
-    // 1. 用户配置的路径
-    if (paths.projectConstraints) {
-        candidates.push(path.resolve(context._vaalRoot, paths.projectConstraints));
+    if (!fs.existsSync(projectConstraintsPath)) {
+        console.log('  → 未找到项目约束: project-constraints.md（将视为无项目级约束）');
+        return { hard: [], soft: [], dependencies: [], risks: [] };
     }
 
-    // 2. 常见的 agents 文件（相对于项目根目录）
-    const agentFiles = ['AGENTS.md', 'agents.md', 'CLAUDE.md', '.cursorrules'];
-    for (const file of agentFiles) {
-        candidates.push(path.resolve(context.projectRoot, file));
+    const content = fs.readFileSync(projectConstraintsPath, 'utf-8');
+    const constraints = parseConstraints(content);
+    if (constraints.hard.length || constraints.soft.length || constraints.risks.length) {
+        console.log('  → 已加载项目约束: project-constraints.md');
     }
 
-    // 3. 默认的 VAAL 项目约束文件
-    candidates.push(path.resolve(context._vaalRoot, '_workspace/exec/project-constraints.md'));
-
-    for (const filePath of candidates) {
-        if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, 'utf-8');
-            const constraints = parseConstraints(content);
-            if (constraints.hard.length || constraints.soft.length || constraints.risks.length) {
-                console.log(`  → 已加载项目约束: ${path.basename(filePath)}`);
-                return constraints;
-            }
-        }
-    }
-
-    return { hard: [], soft: [], dependencies: [], risks: [] };
+    return constraints;
 }
 
 /**

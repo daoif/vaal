@@ -16,6 +16,15 @@ AI 职责 - 理解上下文、判断场景、灵活引导、异常处理
 协作模式 - 脚本生成数据 → AI 分析理解 → AI 给出人性化建议
 反模式 - ❌ 脚本里写复杂判断逻辑 / ❌ AI 提示写死所有场景
 
+### 原则3: 自包含优先
+
+VAAL 的设计目标是**简单、自包含、可预测。**
+
+具体体现：
+- 不探测项目根目录的外部约束文件（如 AGENTS.md、CLAUDE.md、.cursorrules）
+- 约束、配置、任务全部放在 `_workspace/` 内部，行为可预测
+- 保持开源，但不为了"通用性"增加复杂度
+- 如果有冲突，选择"简单"而非"灵活"
 ## 一、项目愿景
 
 ### 我们想解决什么问题？
@@ -155,9 +164,9 @@ Phase 5: 人工复审（循环迭代）
 | 🔗 | 依赖 | 前置条件 | 依赖未完成则跳过 |
 | ⚠️ | 风险 | 注意事项 | 提示 AI 注意 |
 
-**约束层级（从上到下合并）：**
+**约束层级（从上到下合并）：**  
 ```
-项目级约束 (project-constraints.md 或 AGENTS.md)
+项目级约束 (project-constraints.md)
     ↓ 合并
 模块级约束 (modules/*.md)
     ↓ 合并
@@ -488,4 +497,7 @@ finally: mergeTasks → sortDeps → checkConsist1 → genUserStories → checkC
 
 4. **暂不实现 in-progress 状态**
    - 理由：当前单线程串行执行，`- [/]` 和 `- [ ]` 处理方式相同，等有多线程需求时再考虑
+
+5. **自包含约束文件**
+   - 理由：VAAL 只使用 `.vaal/_workspace/exec/project-constraints.md` 作为项目级约束，不探测项目根目录的 `AGENTS.md`、`CLAUDE.md`、`.cursorrules` 等外部文件，以保证行为可预测
 

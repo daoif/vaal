@@ -21,7 +21,7 @@ node .vaal/init/scripts/setup.js
 ```
 
 脚本会自动：
-1. 探查仓库状态（技术栈、约束文件、源码结构）
+1. 探查仓库状态（技术栈、源码结构）
 2. 判断仓库类型（A/B/C/D）
 3. 创建 `_workspace/` 目录结构
 4. 根据探查结果生成适配的 `config.json`
@@ -108,13 +108,13 @@ node .vaal/init/scripts/setup.js
 
 已创建文件：
 - .vaal/_workspace/exec/config.json（配置文件）
+- .vaal/_workspace/exec/project-constraints.md（项目约束）
 - .vaal/_workspace/exec/tasks.md（任务列表模板）
 
-检测到已有约束文件：[文件名]，已自动配置使用。
-
 下一步：
-1. 编辑 tasks.md 添加任务
-2. 运行 node .vaal/exec/scripts/run.js
+1. 编辑 project-constraints.md 设置项目约束
+2. 编辑 tasks.md 添加任务
+3. 运行 node .vaal/exec/scripts/run.js
 
 任务编写建议：
 - 每个任务应该独立可验证

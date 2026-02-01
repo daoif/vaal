@@ -38,8 +38,6 @@ const probe = {
     packageJson: null,
     
     // 约束文件
-    agentsFile: null,
-    
     // 源码
     hasSrcDir: false,
     hasDocsDir: false,
@@ -81,17 +79,8 @@ if (!probe.techStack) {
     }
 }
 
-// 探查约束文件
-const agentFiles = ['AGENTS.md', 'CLAUDE.md', '.cursorrules'];
-for (const file of agentFiles) {
-    if (fs.existsSync(path.join(projectRoot, file))) {
-        probe.agentsFile = file;
-        break;
-    }
-}
-
 // 探查目录结构
-probe.hasSrcDir = fs.existsSync(path.join(projectRoot, 'src')) || 
+probe.hasSrcDir = fs.existsSync(path.join(projectRoot, 'src')) ||
                    fs.existsSync(path.join(projectRoot, 'app'));
 probe.hasDocsDir = fs.existsSync(path.join(projectRoot, 'docs'));
 
@@ -134,10 +123,9 @@ console.log('┌─────────────────────�
 console.log('│           🔍 仓库探查结果               │');
 console.log('├────────────────────────────────────────┤');
 console.log(`│ 仓库类型: Type ${probe.repoType} - ${repoTypeNames[probe.repoType].padEnd(20)}│`);
-console.log(`│ 技术栈: ${(probe.techStack || '未检测到').padEnd(30)}│`);
+console.log(`│ 技术栈: ${(probe.techStack || '未检测到').padEnd(30)}│`);        
 console.log(`│ Git 仓库: ${(probe.hasGit ? '是' : '否').padEnd(28)}│`);
-console.log(`│ 有提交历史: ${(probe.hasCommits ? '是' : '否').padEnd(26)}│`);
-console.log(`│ 约束文件: ${(probe.agentsFile || '未检测到').padEnd(28)}│`);
+console.log(`│ 有提交历史: ${(probe.hasCommits ? '是' : '否').padEnd(26)}│`);   
 console.log('└────────────────────────────────────────┘');
 console.log('');
 
@@ -209,8 +197,7 @@ const config = {
     // 保存探查结果供 AI 参考
     _probe: {
         repoType: probe.repoType,
-        techStack: probe.techStack,
-        agentsFile: probe.agentsFile
+        techStack: probe.techStack
     }
 };
 
@@ -238,31 +225,29 @@ if (probe.techStack === 'python') {
 // 默认只在确实检测到测试命令时才把 test 设为“必需”
 config.validation.required = config.validation.test ? ['test'] : [];
 
-// 如果检测到约束文件，使用它
-if (probe.agentsFile) {
-    config.paths.projectConstraints = `../${probe.agentsFile}`;
-}
-
 // 写入配置
 const configPath = path.join(workspaceRoot, 'exec/config.json');
 if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4), 'utf-8');
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4), 'utf-8');     
     console.log('  ✓ 创建配置文件: _workspace/exec/config.json');
 } else {
     console.log('  - 配置文件已存在: _workspace/exec/config.json');
 }
 
-// 复制项目约束模板（仅当未使用外部约束文件时）
+// 复制项目约束模板（固定使用 VAAL 内部约束文件）
 const constraintTemplate = path.join(vaalRoot, 'init/templates/project-constraints.template.md');
-const constraintPath = path.join(workspaceRoot, 'exec/project-constraints.md');
+const constraintPath = path.join(workspaceRoot, 'exec/project-constraints.md'); 
 
-if (!probe.agentsFile && !fs.existsSync(constraintPath)) {
+if (!fs.existsSync(constraintPath)) {
     if (fs.existsSync(constraintTemplate)) {
         fs.copyFileSync(constraintTemplate, constraintPath);
         console.log('  ✓ 创建项目约束: _workspace/exec/project-constraints.md');
+    } else {
+        fs.writeFileSync(constraintPath, '# 项目级约束\n', 'utf-8');
+        console.log('  ✓ 创建项目约束: _workspace/exec/project-constraints.md');
     }
-} else if (probe.agentsFile) {
-    console.log(`  - 使用外部约束文件: ${probe.agentsFile}`);
+} else {
+    console.log('  - 项目约束已存在: _workspace/exec/project-constraints.md');
 }
 
 // 创建任务列表

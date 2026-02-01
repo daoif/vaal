@@ -35,13 +35,12 @@ VAAL
 			风险
 				注意事项
 				提示AI关注
-		约束层级
-			项目级约束
-				AGENTS.md
-				project-constraints.md
-			模块级约束
-				modules目录下的md文件
-			任务级约束
+                约束层级
+                        项目级约束
+                                project-constraints.md
+                        模块级约束
+                                modules目录下的md文件
+                        任务级约束
 				嵌入任务描述中
 		槽位架构
 			调度器模式

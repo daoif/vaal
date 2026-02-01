@@ -14,17 +14,15 @@
 |------|------|--------|------|
 | `tasks` | string | `_workspace/exec/tasks.md` | 任务列表文件 |
 | `progress` | string | `_workspace/exec/progress.txt` | 执行进度记录文件 |
-| `projectConstraints` | string | `_workspace/exec/project-constraints.md` | 项目级约束文件 |
+| `projectConstraints` | string | `_workspace/exec/project-constraints.md` | 项目级约束文件（固定使用该路径，不支持指向项目根的 `AGENTS.md` 等外部文件） |
 | `moduleConstraints` | string | `_workspace/split/modules` | 模块约束目录 |
-
-> **提示**：如果项目根目录已有 `AGENTS.md`、`CLAUDE.md` 等文件，系统会自动检测并作为项目约束使用。
 
 示例：
 ```json
 {
   "paths": {
     "tasks": "_workspace/exec/tasks.md",
-    "projectConstraints": "../AGENTS.md",
+    "projectConstraints": "_workspace/exec/project-constraints.md",
     "moduleConstraints": "_workspace/split/modules"
   }
 }
