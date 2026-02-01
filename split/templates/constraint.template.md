@@ -1,6 +1,6 @@
 # 模块约束文件模板
 
-> 将此文件保存到 `_workspace/split/design/modules/<模块名>.md`
+> 将此文件保存到 `_workspace/split/modules/<模块名>.md`
 > 
 > 关联此模块的任务会自动继承这些约束
 
@@ -56,7 +56,7 @@
 ```
 
 执行时，脚本会：
-1. 读取 `_workspace/split/design/modules/user-auth.md`
+1. 读取 `_workspace/split/modules/user-auth.md`
 2. 解析模块级约束
 3. 与任务级约束合并
 4. 传递给 AI

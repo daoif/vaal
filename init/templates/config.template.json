@@ -31,14 +31,12 @@
         "tasks": "_workspace/exec/tasks.md",
         "progress": "_workspace/exec/progress.txt",
         "projectConstraints": "_workspace/exec/project-constraints.md",
-        "moduleConstraints": "_workspace/split/design/modules"
+        "moduleConstraints": "_workspace/split/modules"
     },
     "validation": {
-        "test": "npm test",
-        "lint": "npm run lint",
-        "required": [
-            "test"
-        ]
+        "test": "",
+        "lint": "",
+        "required": []
     },
     "git": {
         "autoCommit": true,

@@ -49,6 +49,12 @@ module.exports = async function (context) {
         await execAsync(`git commit -m "${message}"`, { cwd: context.projectRoot });
         console.log(`  → 已提交: ${message}`);
 
+        // 保存 commit hash（用于 progress.txt 备注）
+        const { stdout: commitHash } = await execAsync('git rev-parse --short HEAD', {
+            cwd: context.projectRoot
+        });
+        context.lastCommitHash = commitHash.trim();
+
         // Push
         if (git.autoPush) {
             await execAsync('git push', { cwd: context.projectRoot });

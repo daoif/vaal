@@ -15,7 +15,7 @@
 | `tasks` | string | `_workspace/exec/tasks.md` | 任务列表文件 |
 | `progress` | string | `_workspace/exec/progress.txt` | 执行进度记录文件 |
 | `projectConstraints` | string | `_workspace/exec/project-constraints.md` | 项目级约束文件 |
-| `moduleConstraints` | string | `_workspace/split/design/modules` | 模块约束目录 |
+| `moduleConstraints` | string | `_workspace/split/modules` | 模块约束目录 |
 
 > **提示**：如果项目根目录已有 `AGENTS.md`、`CLAUDE.md` 等文件，系统会自动检测并作为项目约束使用。
 
@@ -25,7 +25,7 @@
   "paths": {
     "tasks": "_workspace/exec/tasks.md",
     "projectConstraints": "../AGENTS.md",
-    "moduleConstraints": "_workspace/split/design/modules"
+    "moduleConstraints": "_workspace/split/modules"
   }
 }
 ```
@@ -40,7 +40,7 @@
 | `lint` | string | - | 代码检查命令 |
 | `build` | string | - | 构建命令（可选） |
 | `custom` | string[] | [] | 其他自定义验证命令 |
-| `required` | string[] | ["test"] | 必须通过的验证项 |
+| `required` | string[] | [] | 必须通过的验证项（通常为 ["test"]） |
 
 示例：
 ```json
@@ -110,7 +110,7 @@ commitStyle 可选值：
   "paths": {
     "tasks": "_workspace/exec/tasks.md",
     "projectConstraints": "_workspace/exec/project-constraints.md",
-    "moduleConstraints": "_workspace/split/design/modules"
+    "moduleConstraints": "_workspace/split/modules"
   },
   "validation": {
     "test": "npm test",

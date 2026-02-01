@@ -38,9 +38,12 @@ module.exports = async function (context) {
         const lines = content.split('\n');
 
         // 替换对应行
-        const oldLine = lines[task.lineIndex];
-        const newLine = oldLine.replace('- [ ]', '- [x]');
-        lines[task.lineIndex] = newLine;
+        const idx = task.lineIndex;
+        if (Number.isInteger(idx) && idx >= 0 && idx < lines.length) {
+            const oldLine = lines[idx];
+            const newLine = oldLine.replace(/^(\s*[-*]\s*)\[\s*\]/, '$1[x]');
+            lines[idx] = newLine;
+        }
 
         fs.writeFileSync(taskPath, lines.join('\n'), 'utf-8');
         console.log('  → 任务已标记完成');

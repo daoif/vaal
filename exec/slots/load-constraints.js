@@ -137,10 +137,21 @@ function loadProjectConstraints(context) {
 function loadModuleConstraints(moduleName, context) {
     const config = context._config;
     const paths = config.paths || {};
-    const moduleDir = path.resolve(
+
+    const configuredDir = path.resolve(
         context._vaalRoot,
-        paths.moduleConstraints || '_workspace/split/design/modules'
+        paths.moduleConstraints || '_workspace/split/modules'
     );
+
+    // 兼容历史默认值：旧版本默认使用 _workspace/split/design/modules
+    // 同时 split 模块当前默认输出到 _workspace/split/modules
+    const fallbackDirs = [
+        configuredDir,
+        path.resolve(context._vaalRoot, '_workspace/split/modules'),
+        path.resolve(context._vaalRoot, '_workspace/split/design/modules')
+    ];
+
+    const moduleDirs = Array.from(new Set(fallbackDirs));
 
     const possibleNames = [
         `${moduleName}.md`,
@@ -149,12 +160,14 @@ function loadModuleConstraints(moduleName, context) {
         `${moduleName.replace(/\s+/g, '_')}.md`
     ];
 
-    for (const fileName of possibleNames) {
-        const modulePath = path.join(moduleDir, fileName);
-        if (fs.existsSync(modulePath)) {
-            const content = fs.readFileSync(modulePath, 'utf-8');
-            console.log(`  → 已加载模块约束: ${fileName}`);
-            return parseConstraints(content);
+    for (const moduleDir of moduleDirs) {
+        for (const fileName of possibleNames) {
+            const modulePath = path.join(moduleDir, fileName);
+            if (fs.existsSync(modulePath)) {
+                const content = fs.readFileSync(modulePath, 'utf-8');
+                console.log(`  → 已加载模块约束: ${fileName}`);
+                return parseConstraints(content);
+            }
         }
     }
 

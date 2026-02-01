@@ -80,6 +80,7 @@ async function main() {
         _config: config,
         _errors: [],
         hasMore: true,  // 循环控制标志
+        stopped: false
     };
 
     // 获取 pipeline 和 slots
@@ -133,6 +134,7 @@ async function main() {
             }
             if (result.stop) {
                 console.log('[VAAL] 停止循环');
+                context.stopped = true;
                 context.hasMore = false;
                 break;
             }
@@ -141,6 +143,7 @@ async function main() {
 
     if (iteration >= maxIterations) {
         console.log(`\n[VAAL] 达到最大迭代次数: ${maxIterations}`);
+        context.stopped = true;
     }
 
     // ========== 结束阶段 ==========

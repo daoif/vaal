@@ -149,6 +149,7 @@ console.log('📁 创建目录结构...\n');
 
 const directories = [
     '_workspace/split/design',
+    '_workspace/split/design/modules',
     '_workspace/split/modules',
     '_workspace/split/tasks-draft',
     '_workspace/exec'
@@ -191,13 +192,13 @@ const config = {
     paths: {
         tasks: '_workspace/exec/tasks.md',
         progress: '_workspace/exec/progress.txt',
-        projectConstraints: '_workspace/exec/project-constraints.md',
-        moduleConstraints: '_workspace/split/design/modules'
+        projectConstraints: '_workspace/exec/project-constraints.md',     
+        moduleConstraints: '_workspace/split/modules'
     },
     validation: {
-        test: 'npm test',
-        lint: 'npm run lint',
-        required: ['test']
+        test: '',
+        lint: '',
+        required: []
     },
     git: {
         autoCommit: true,
@@ -233,6 +234,9 @@ if (probe.techStack === 'python') {
     config.validation.test = 'cargo test';
     config.validation.lint = 'cargo clippy';
 }
+
+// 默认只在确实检测到测试命令时才把 test 设为“必需”
+config.validation.required = config.validation.test ? ['test'] : [];
 
 // 如果检测到约束文件，使用它
 if (probe.agentsFile) {
