@@ -4,219 +4,153 @@
 
 ---
 
-## VAAL 完整工作流
+## 核心原则
 
-初始化只是第一步，完整流程如下：
+**探查优先，不问已知。**
 
-```
-1. 初始化配置（本文档）
-   └── 运行 node .vaal/init/scripts/setup.js
-   └── 生成 _workspace/ 目录结构
-   
-2. 导入设计文档（可选）
-   └── 见 split/docs/GUIDE.md
-   
-3. 拆分任务
-   └── 设计文档 → 模块 → 任务列表
-   └── 包含约束集（硬约束/软约束/依赖/风险）
-   
-4. 执行任务
-   └── node .vaal/exec/scripts/run.js
-```
-
-如果用户已有任务列表，可以跳过步骤 2-3。
-
----
-
-## 触发方式
-
-当用户说以下话时，表示需要初始化 VAAL：
-- "初始化 VAAL"
-- "帮我配置 VAAL"
-- "读取 .vaal/init/docs/GUIDE.md"
+AI 应通过运行脚本和读取目录来获取信息，而非询问用户。
 
 ---
 
 ## 初始化流程
 
-### Step 0: 运行初始化脚本
-
-首先运行初始化脚本创建目录结构：
+### Step 1: 运行初始化脚本
 
 ```bash
 node .vaal/init/scripts/setup.js
 ```
 
-这会自动创建：
-- `.vaal/_workspace/split/design/modules/` - 模块约束目录
-- `.vaal/_workspace/exec/config.json` - 配置文件
-- `.vaal/_workspace/exec/project-constraints.md` - 项目约束文件
-- `.vaal/_workspace/exec/tasks.md` - 任务列表模板
+脚本会自动：
+1. 探查仓库状态（技术栈、约束文件、源码结构）
+2. 判断仓库类型（A/B/C/D）
+3. 创建 `_workspace/` 目录结构
+4. 根据探查结果生成适配的 `config.json`
+5. 输出探查报告和下一步建议
 
 ---
 
-### Step 1: 问候与说明
+### Step 2: 确认配置
 
-向用户解释 VAAL 的作用：
+向用户展示脚本输出的探查结果，询问是否需要调整。
 
-```
-你好！我来帮你初始化 VAAL（AI 自动化任务循环工具）。
-
-VAAL 可以帮你：
-- 自动循环执行任务列表中的任务
-- 每个任务完成后自动验证和 Git 提交
-- 支持 Codex、Claude 等 AI CLI 工具
-- 三层约束体系（项目/模块/任务）确保代码质量
-
-接下来我会问你几个问题来完善配置。
-```
+**只有以下情况需要询问用户：**
+- AI 工具选择（codex / claude）— 无法自动检测
+- 脚本探查失败的项目
 
 ---
 
-### Step 2: 收集信息
+### Step 3: 根据仓库类型引导下一步
 
-依次询问以下信息：
+#### Type A：空仓库
 
-#### 2.1 验证命令
-
-```
-请告诉我你项目的验证命令：
-
-1. 测试命令是什么？（例如：npm test, pytest, go test）
-2. 代码检查命令是什么？（例如：npm run lint, flake8）
-3. 还有其他需要的验证命令吗？
-
-如果暂时没有，可以说"跳过"，后续可以在 config.json 中添加。
-```
-
-#### 2.2 Git 策略
+检测到空仓库时，**主动询问用户需求**：
 
 ```
-关于 Git 操作，你希望：
+✅ VAAL 初始化完成！
 
-1. 每个任务完成后自动 commit？（推荐：是）
-2. commit 后自动 push 吗？（推荐：否，手动 push）
-3. 提交信息使用什么风格？
-   - conventional: feat(scope): message
-   - simple: 直接描述
+检测到这是一个空仓库，我需要了解你的项目需求：
+
+1. 这个项目打算用什么技术栈？
+   - 前端：Vue / React / 纯 HTML+JS
+   - 后端：Node.js / Python / Go
+   - 全栈：前后端分离 / 单体应用
+   
+2. 你有设计文档或需求文档吗？
+   - 如果有，可以放到 .vaal/_workspace/split/design/
+   - 如果没有，我可以帮你梳理需求
+
+请告诉我你的想法，我来帮你初始化项目骨架。
 ```
 
-#### 2.3 AI 工具
+**等用户回答后**，再根据用户选择执行具体的初始化命令。
+
+#### Type B：文档阶段
 
 ```
-你打算使用什么 AI 工具执行任务？
+✅ VAAL 初始化完成！
 
-1. codex - OpenAI Codex CLI
-2. claude - Anthropic Claude CLI
-3. 其他 - 请告诉我命令名称
+检测到项目有设计文档但无代码。建议：
+
+1. 使用 VAAL 拆分任务（推荐）
+   - 对我说："帮我拆分任务"
+   - 我会读取设计文档并生成结构化任务列表
+
+2. 或手动编写任务
+   - 编辑 .vaal/_workspace/exec/tasks.md
 ```
 
-#### 2.4 项目约束（可选）
+#### Type C：骨架阶段
 
 ```
-项目中是否已有 AGENTS.md、CLAUDE.md 等文件？
+✅ VAAL 初始化完成！
 
-如果有，我可以配置 VAAL 直接使用它作为项目级约束。
-如果没有，可以使用默认的 project-constraints.md，稍后编辑。
-```
-
----
-
-### Step 3: 修改配置
-
-根据收集的信息，修改 `.vaal/_workspace/exec/config.json`：
-
-```json
-{
-  "paths": {
-    "tasks": "_workspace/exec/tasks.md",
-    "projectConstraints": "_workspace/exec/project-constraints.md",
-    "moduleConstraints": "_workspace/split/design/modules"
-  },
-  "validation": {
-    "test": "用户提供的测试命令",
-    "lint": "用户提供的lint命令",
-    "required": ["test"]
-  },
-  "git": {
-    "autoCommit": true,
-    "autoPush": false,
-    "commitStyle": "conventional"
-  },
-  "slots": {
-    "execute": "exec/slots/codex.js"
-  },
-  "maxIterations": 50
-}
-```
-
-配置要点：
-- 如果用户选择 Claude，将 `slots.execute` 改为 `exec/slots/claude.js`
-- 如果用户有 AGENTS.md，将 `paths.projectConstraints` 改为 `../AGENTS.md`
-
----
-
-### Step 4: 确认配置
-
-向用户展示并确认：
-
-```
-根据你的选择，配置如下：
-
-📁 .vaal/_workspace/exec/config.json
-[展示完整配置内容]
-
-请确认:
-1. 配置是否正确？
-2. 是否需要调整？
-
-确认后即可开始使用。
-```
-
----
-
-### Step 5: 引导后续步骤
-
-```
-✅ 初始化完成！
+检测到这是一个骨架项目。
 
 已创建文件：
 - .vaal/_workspace/exec/config.json（配置文件）
 - .vaal/_workspace/exec/project-constraints.md（项目约束）
 - .vaal/_workspace/exec/tasks.md（任务列表模板）
-- .vaal/_workspace/split/design/modules/（模块约束目录）
 
-下一步你可以：
+下一步：
+1. 编辑 project-constraints.md 设置项目约束
+2. 编辑 tasks.md 添加任务
+3. 运行 node .vaal/exec/scripts/run.js
 
-【选项 A】直接编写任务
-  1. 编辑 .vaal/_workspace/exec/project-constraints.md 设置项目约束
-  2. 编辑 .vaal/_workspace/exec/tasks.md 添加任务
-  3. 运行 node .vaal/exec/scripts/run.js
+或对我说"帮我拆分任务"从设计文档生成任务。
+```
 
-【选项 B】从设计文档生成任务（推荐）
-  对我说："帮我拆分任务"
-  我会引导你导入设计文档并生成结构化的任务列表
-  包含约束集（硬约束/软约束/依赖/风险）
+#### Type D：开发中
+
+```
+✅ VAAL 初始化完成！
+
+检测到这是一个已有代码的项目（中途引入 VAAL）。
+
+已创建文件：
+- .vaal/_workspace/exec/config.json（配置文件）
+- .vaal/_workspace/exec/tasks.md（任务列表模板）
+
+检测到已有约束文件：[文件名]，已自动配置使用。
+
+下一步：
+1. 编辑 tasks.md 添加任务
+2. 运行 node .vaal/exec/scripts/run.js
 
 任务编写建议：
 - 每个任务应该独立可验证
 - 任务粒度要小，能在一个上下文窗口内完成
 - 使用关联模块继承模块级约束
 - 避免"实现整个功能"这样的大任务
-
-如果需要修改配置，直接编辑 .vaal/_workspace/exec/config.json。
 ```
+
+---
+
+## 仓库类型判断标准
+
+| 类型 | 特征 |
+|------|------|
+| **Type A：空仓库** | 无文件或仅有 README |
+| **Type B：文档阶段** | 有 docs/ 目录但无 src/、无 package.json |
+| **Type C：骨架阶段** | 有 package.json 但无 Git 提交历史 |
+| **Type D：开发中** | 有 Git 提交历史 |
+
+---
+
+## 触发方式
+
+当用户说以下话时，运行初始化：
+- "初始化 VAAL"
+- "帮我配置 VAAL"
+- "读取 .vaal/init/docs/GUIDE.md"
 
 ---
 
 ## 注意事项
 
-1. **先运行脚本** - 确保 setup.js 已运行，目录结构已创建
-2. **不要假设** - 如果不确定用户需求，要询问
+1. **先运行脚本** - 确保 setup.js 已运行，探查已完成
+2. **不要假设** - 如果探查失败才询问用户
 3. **提供默认值** - 让用户可以快速确认或跳过
-4. **解释清楚** - 确保用户理解每个选项
-5. **确认配置** - 修改配置前先让用户确认
-6. **引导下一步** - 告诉用户可以进行任务拆分
+4. **确认配置** - 修改配置前让用户确认
 
 ---
 
