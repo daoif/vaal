@@ -13,6 +13,67 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * 从文本中提取任务 ID（如 IMPL-001）
+ */
+function extractTaskIds(text) {
+    if (!text) return [];
+    const matches = String(text).match(/[A-Z]+-\d+/gi);
+    return matches ? matches.map(id => id.toUpperCase()) : [];
+}
+
+/**
+ * 从任务 rawContent 中提取依赖任务 ID（仅从“依赖”段落提取）
+ */
+function extractDependenciesFromTaskContent(content) {
+    const lines = String(content || '').split('\n');
+    let inDependencies = false;
+    const deps = [];
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        const lower = trimmed.toLowerCase();
+
+        const looksLikeHeader = trimmed.startsWith('#') || trimmed.startsWith('**') || /^[^\s]+[：:]$/.test(trimmed);
+        const isDepsHeader =
+            looksLikeHeader &&
+            (lower.includes('依赖') || lower.includes('depend') || lower.includes('前置') || lower.startsWith('dependencies'));
+
+        if (isDepsHeader) {
+            inDependencies = true;
+            deps.push(...extractTaskIds(trimmed));
+            continue;
+        }
+
+        if (inDependencies) {
+            const isOtherSectionHeader =
+                looksLikeHeader &&
+                (lower.includes('硬约束') ||
+                    lower.includes('hard constraint') ||
+                    lower.includes('软约束') ||
+                    lower.includes('soft constraint') ||
+                    lower.includes('风险') ||
+                    lower.includes('risk') ||
+                    lower.includes('验收') ||
+                    lower.includes('acceptance') ||
+                    lower.includes('测试') ||
+                    lower.includes('test'));
+
+            if (isOtherSectionHeader) {
+                inDependencies = false;
+                continue;
+            }
+
+            deps.push(...extractTaskIds(trimmed));
+        }
+    }
+
+    // 清洗：去重 + 去空格 + 大写
+    return [...new Set(deps.map(d => String(d).trim().toUpperCase()).filter(Boolean))];
+}
+
 module.exports = async function (context) {
     const config = context._config;
     const paths = config.paths || {};
@@ -34,6 +95,19 @@ module.exports = async function (context) {
 
     // 初始化已完成任务ID列表
     context.completedTaskIds = [];
+
+    // 记录 ID 出现次数，用于唯一性校验（pending + done 都算）
+    const idOccurrences = new Map(); // id -> { count, firstLine, statuses: Set }
+    const recordId = (id, lineNum, status) => {
+        const key = String(id).toUpperCase();
+        const existing = idOccurrences.get(key);
+        if (!existing) {
+            idOccurrences.set(key, { count: 1, firstLine: lineNum, statuses: new Set([status]) });
+            return;
+        }
+        existing.count++;
+        existing.statuses.add(status);
+    };
 
     // 解析 Markdown 格式任务（支持多行约束）
     const lines = content.split('\n');
@@ -79,15 +153,18 @@ module.exports = async function (context) {
             if (!taskId) {
                 autoId++;
                 taskId = `AUTO-${String(autoId).padStart(3, '0')}`;
-                warnings.push(`行 ${lineNum}: 任务缺少ID，自动分配 ${taskId}`);
+                warnings.push(`行 ${lineNum}: 任务缺少ID，自动分配 ${taskId}`); 
             }
+
+            recordId(taskId, lineNum, 'pending');
 
             currentTask = {
                 id: taskId,
                 lineIndex: i,
                 task: taskContent,
                 status: 'pending',
-                rawContent: line
+                rawContent: line,
+                dependencies: []
             };
             continue;
         }
@@ -111,7 +188,9 @@ module.exports = async function (context) {
             ]) {
                 const match = taskContent.match(pattern);
                 if (match) {
-                    context.completedTaskIds.push(match[1].toUpperCase());
+                    const doneId = match[1].toUpperCase();
+                    context.completedTaskIds.push(doneId);
+                    recordId(doneId, lineNum, 'done');
                     break;
                 }
             }
@@ -154,6 +233,36 @@ module.exports = async function (context) {
         if (warnings.length > 3) {
             console.log(`    ... 还有 ${warnings.length - 3} 条警告`);
         }
+    }
+
+    // 预解析每个任务的依赖列表（供 read-next 判断“可执行”）
+    for (const task of tasks) {
+        const deps = extractDependenciesFromTaskContent(task.rawContent);
+        task.dependencies = deps;
+
+        // 禁止自依赖
+        if (deps.includes(task.id)) {
+            console.error(`  ❌ 任务 ${task.id} 存在自依赖（依赖了自己），请修复任务列表`);
+            context.tasks = tasks;
+            context.taskPath = taskPath;
+            context.hasMore = false;
+            return { stop: true };
+        }
+    }
+
+    // ID 唯一性校验：同一 ID 不允许重复出现（pending/done 任何一种重复都算）
+    const duplicates = [];
+    for (const [id, info] of idOccurrences.entries()) {
+        if (info.count > 1) {
+            duplicates.push(id);
+        }
+    }
+    if (duplicates.length > 0) {
+        console.error(`  ❌ 任务 ID 重复: ${duplicates.join(', ')}`);
+        context.tasks = tasks;
+        context.taskPath = taskPath;
+        context.hasMore = false;
+        return { stop: true };
     }
 
     context.tasks = tasks;

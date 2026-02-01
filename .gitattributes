@@ -1,0 +1,13 @@
+# 所有文本文件统一用 LF
+* text=auto eol=lf
+
+# 确保这些扩展名被识别为文本
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+
+# Windows 批处理文件保持 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf

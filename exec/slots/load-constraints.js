@@ -183,20 +183,23 @@ module.exports = async function (context) {
     let constraints = mergeConstraints(projectConstraints, moduleConstraints);
     constraints = mergeConstraints(constraints, taskConstraints);
 
-    // 5. 检查依赖是否满足
-    const completedIds = (context.completedTaskIds || []).map(id => id.toUpperCase());
+    // 5. 防御性断言：依赖检查已前移到 read-next，这里不应该再出现依赖未完成的任务
+    const completedFromFile = (context.completedTaskIds || []).map(id => String(id).toUpperCase());
+    const completedIds = new Set([
+        ...completedFromFile,
+        ...(context.tasks || []).filter(t => t.status === 'done').map(t => String(t.id).toUpperCase())
+    ]);
 
-    for (const dep of constraints.dependencies) {
-        const idMatches = dep.match(/([A-Z]+-\d+)/gi);
-        if (idMatches) {
-            for (const rawId of idMatches) {
-                const depId = rawId.toUpperCase();
-                if (!completedIds.includes(depId)) {
-                    console.log(`  → 依赖未满足: ${depId}`);
-                    context.stats.skipped++;
-                    return { break: true };
-                }
-            }
+    const knownIds = new Set([
+        ...completedFromFile,
+        ...(context.tasks || []).map(t => String(t.id).toUpperCase())
+    ]);
+
+    const deps = (task.dependencies || []).map(d => String(d).trim().toUpperCase()).filter(Boolean);
+    for (const depId of deps) {
+        if (!knownIds.has(depId) || !completedIds.has(depId)) {
+            console.error(`  ❌ 断言失败：任务 ${task.id} 的依赖 ${depId} 未满足，但仍进入 load-constraints（read-next 应该已过滤）`);
+            return { stop: true };
         }
     }
 
