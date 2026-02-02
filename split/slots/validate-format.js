@@ -26,33 +26,34 @@ module.exports = async function (context) {
     const errors = [];
 
     // 检查是否包含任务行
-    const taskLines = content.match(/^- \[([ x])\] \[(?:TEST|IMPL|FIX|REFACTOR|DOC)-\d+\]/gm) || [];
+    const taskLines = content.match(/^- \[([ x])\] \[(?:TEST|IMPL|FIX|REFACTOR|DOC)-\d{4}-\d{4}\]/gm) || [];
     if (taskLines.length === 0) {
         errors.push('未找到符合格式的任务行');
     }
 
     // 检查任务 ID 是否有重复
     const ids = [];
-    const idMatches = content.matchAll(/\[(TEST|IMPL|FIX|REFACTOR|DOC)-(\d+)\]/g);
+    const idMatches = content.matchAll(/\[(TEST|IMPL|FIX|REFACTOR|DOC)-(\d+)-(\d+)\]/g);
     for (const match of idMatches) {
-        const id = `${match[1]}-${match[2]}`;
+        const id = `${match[1]}-${match[2]}-${match[3]}`;
         if (ids.includes(id)) {
             errors.push(`重复的任务 ID: ${id}`);
         }
         ids.push(id);
     }
 
-    // 检查任务 ID 数字部分是否满足 4 位（MMTT）
+    // 检查任务 ID 数字部分是否满足 4+4 位（MMMM-TTTT）
     const badIds = [];
-    const idMatches2 = content.matchAll(/\[(TEST|IMPL|FIX|REFACTOR|DOC)-(\d+)\]/g);
+    const idMatches2 = content.matchAll(/\[(TEST|IMPL|FIX|REFACTOR|DOC)-(\d+)-(\d+)\]/g);
     for (const match of idMatches2) {
-        const num = match[2];
-        if (num.length !== 4) {
-            badIds.push(`${match[1]}-${num}`);
+        const mod = match[2];
+        const seq = match[3];
+        if (mod.length !== 4 || seq.length !== 4) {
+            badIds.push(`${match[1]}-${mod}-${seq}`);
         }
     }
     if (badIds.length > 0) {
-        errors.push(`任务 ID 数字部分必须为 4 位（MMTT），发现: ${badIds.slice(0, 10).join(', ')}${badIds.length > 10 ? ' ...' : ''}`);
+        errors.push(`任务 ID 数字部分必须为 4+4 位（MMMM-TTTT），发现: ${badIds.slice(0, 10).join(', ')}${badIds.length > 10 ? ' ...' : ''}`);
     }
 
     // 检查是否有关联模块

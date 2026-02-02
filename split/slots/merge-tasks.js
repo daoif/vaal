@@ -67,7 +67,7 @@ function parseTasks(content) {
     let currentContent = [];
 
     for (const line of lines) {
-        const match = line.match(/^- \[([ xX])\] \[([A-Z]+-\d+)\]\s*(.+)/);
+        const match = line.match(/^- \[([ xX])\] \[([A-Z]+-\d{4}-\d{4})\]\s*(.+)/);
         if (match) {
             if (currentTask) {
                 currentTask.content = currentContent.join('\n');

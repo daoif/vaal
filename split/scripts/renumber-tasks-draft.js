@@ -2,9 +2,9 @@
 /**
  * Renumber task IDs in tasks-draft to avoid cross-module collisions.
  *
- * New rule: IDs use 4-digit numeric part MMTT
- * - MM: module number (two digits, from filename mod-XXX)
- * - TT: task sequence within the module (two digits, from 01)
+ * New rule: IDs use split numeric part MMMM-TTTT
+ * - MMMM: module number (four digits, from filename mod-XXX)
+ * - TTTT: task sequence within the module (four digits, from 0001)
  *
  * This script updates:
  * - Task header lines: "- [ ] [TEST-....] ..." / "- [ ] [IMPL-....] ..."
@@ -15,8 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 function main() {
-    const repoRoot = process.cwd();
-    const vaalRoot = path.join(repoRoot, '.vaal');
+    const vaalRoot = resolveVaalRoot(process.cwd());
     const tasksDraftDir = path.join(vaalRoot, '_workspace', 'split', 'tasks-draft');
 
     if (!fs.existsSync(tasksDraftDir)) {
@@ -54,7 +53,7 @@ function main() {
             console.log(`[renumber] unchanged: ${file} (module ${moduleCode})`);
         }
 
-        const remain = (after.match(/\b(?:TEST|IMPL)-\d{1,3}\b/g) || []).slice(0, 10);
+        const remain = (after.match(/\b(?:TEST|IMPL)-\d{1,4}\b(?!-)/g) || []).slice(0, 10);
         if (remain.length > 0) {
             leftovers.push({ file, remain });
         }
@@ -70,6 +69,20 @@ function main() {
     console.log(`[renumber] done: ${changedFiles}/${files.length} files changed`);
 }
 
+function resolveVaalRoot(cwd) {
+    const direct = path.resolve(cwd);
+    if (fs.existsSync(path.join(direct, 'split')) && fs.existsSync(path.join(direct, '_workspace'))) {
+        return direct;
+    }
+
+    const nested = path.join(direct, '.vaal');
+    if (fs.existsSync(path.join(nested, 'split')) && fs.existsSync(path.join(nested, '_workspace'))) {
+        return nested;
+    }
+
+    throw new Error(`[renumber] cannot locate .vaal root from cwd: ${direct}`);
+}
+
 function renumberOneFile(content, filename) {
     const moduleCode = getModuleCodeFromFilename(filename);
     const lines = content.split('\n');
@@ -79,7 +92,7 @@ function renumberOneFile(content, filename) {
     const seenOldNums = new Set();
 
     for (const line of lines) {
-        const m = line.match(/^- \[[ xX]\] \[(TEST|IMPL)-(\d+)\]/);
+        const m = line.match(/^- \[[ xX]\] \[(TEST|IMPL)-(\d+(?:-\d+)?)\]/);
         if (!m) continue;
         const oldNum = m[2];
         if (!seenOldNums.has(oldNum)) {
@@ -91,8 +104,8 @@ function renumberOneFile(content, filename) {
     const mapping = {}; // oldFullId -> newFullId
     for (let i = 0; i < oldNumOrder.length; i++) {
         const oldNum = oldNumOrder[i];
-        const seq = String(i + 1).padStart(2, '0');
-        const newNum = `${moduleCode}${seq}`;
+        const seq = String(i + 1).padStart(4, '0');
+        const newNum = `${moduleCode}-${seq}`;
         mapping[`TEST-${oldNum}`] = `TEST-${newNum}`;
         mapping[`IMPL-${oldNum}`] = `IMPL-${newNum}`;
     }
@@ -115,7 +128,7 @@ function getModuleCodeFromFilename(filename) {
     if (!Number.isFinite(modNum)) {
         throw new Error(`[renumber] invalid module number in filename: ${filename}`);
     }
-    return String(modNum).padStart(2, '0');
+    return String(modNum).padStart(4, '0');
 }
 
 function escapeRegExp(s) {
@@ -123,4 +136,3 @@ function escapeRegExp(s) {
 }
 
 main();
-

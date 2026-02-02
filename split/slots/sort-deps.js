@@ -28,7 +28,7 @@ module.exports = async function (context) {
         // 解析依赖
         const depMatch = task.content.match(/\*\*依赖[：:]\*\*\s*\n([\s\S]*?)(?=\n\s*\*\*|$)/);
         if (depMatch) {
-            const deps = depMatch[1].match(/([A-Z]+-\d+)/g) || [];
+            const deps = depMatch[1].match(/\b[A-Z]+-\d{4}-\d{4}\b/g) || [];
             depGraph[task.id] = deps;
         }
     }

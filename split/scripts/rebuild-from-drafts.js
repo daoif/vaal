@@ -17,8 +17,8 @@ const fs = require('fs');
 const path = require('path');
 
 async function main() {
-    const repoRoot = process.cwd();
-    const vaalRoot = path.join(repoRoot, '.vaal');
+    const vaalRoot = resolveVaalRoot(process.cwd());
+    const repoRoot = path.dirname(vaalRoot);
     const templateConfigPath = path.join(vaalRoot, 'split', 'templates', 'config.template.json');
     if (!fs.existsSync(templateConfigPath)) {
         console.error(`[rebuild] missing config template: ${templateConfigPath}`);
@@ -73,6 +73,20 @@ async function main() {
     console.log('[rebuild] done');
 }
 
+function resolveVaalRoot(cwd) {
+    const direct = path.resolve(cwd);
+    if (fs.existsSync(path.join(direct, 'split')) && fs.existsSync(path.join(direct, '_workspace'))) {
+        return direct;
+    }
+
+    const nested = path.join(direct, '.vaal');
+    if (fs.existsSync(path.join(nested, 'split')) && fs.existsSync(path.join(nested, '_workspace'))) {
+        return nested;
+    }
+
+    throw new Error(`[rebuild] cannot locate .vaal root from cwd: ${direct}`);
+}
+
 function requireSlot(vaalRoot, relPath) {
     const fullPath = path.resolve(vaalRoot, relPath);
     if (!fs.existsSync(fullPath)) {
@@ -102,4 +116,3 @@ main().catch(err => {
     console.error('[rebuild] fatal:', err && err.message ? err.message : String(err));
     process.exit(1);
 });
-

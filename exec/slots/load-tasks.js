@@ -18,7 +18,7 @@ const path = require('path');
  */
 function extractTaskIds(text) {
     if (!text) return [];
-    const matches = String(text).match(/[A-Z]+-\d+/gi);
+    const matches = String(text).match(/\b(?:[A-Z]+-\d{4}-\d{4}|[A-Z]+-\d+)\b/gi);
     return matches ? matches.map(id => id.toUpperCase()) : [];
 }
 
@@ -135,10 +135,10 @@ module.exports = async function (context) {
             // 格式3: (IMPL-001) 描述
             let taskId = null;
             const idPatterns = [
-                /^\[([A-Z]+-\d+)\]/i,      // [IMPL-001]
-                /^\(([A-Z]+-\d+)\)/i,      // (IMPL-001)
-                /^([A-Z]+-\d+):/i,         // IMPL-001:
-                /^([A-Z]+-\d+)\s/i         // IMPL-001 (空格分隔)
+                /^\[([A-Z]+-(?:\d{4}-\d{4}|\d+))\]/i,      // [IMPL-001] / [IMPL-0001-0001]
+                /^\(([A-Z]+-(?:\d{4}-\d{4}|\d+))\)/i,      // (IMPL-001) / (IMPL-0001-0001)
+                /^([A-Z]+-(?:\d{4}-\d{4}|\d+)):/i,         // IMPL-001: / IMPL-0001-0001:
+                /^([A-Z]+-(?:\d{4}-\d{4}|\d+))\s/i         // IMPL-001 (空格分隔) / IMPL-0001-0001 (空格分隔)
             ];
 
             for (const pattern of idPatterns) {
@@ -181,10 +181,10 @@ module.exports = async function (context) {
             // 提取已完成任务的 ID
             const taskContent = doneMatch[1].trim();
             for (const pattern of [
-                /^\[([A-Z]+-\d+)\]/i,
-                /^\(([A-Z]+-\d+)\)/i,
-                /^([A-Z]+-\d+):/i,
-                /^([A-Z]+-\d+)\s/i
+                /^\[([A-Z]+-(?:\d{4}-\d{4}|\d+))\]/i,
+                /^\(([A-Z]+-(?:\d{4}-\d{4}|\d+))\)/i,
+                /^([A-Z]+-(?:\d{4}-\d{4}|\d+)):/i,
+                /^([A-Z]+-(?:\d{4}-\d{4}|\d+))\s/i
             ]) {
                 const match = taskContent.match(pattern);
                 if (match) {
