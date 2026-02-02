@@ -29,7 +29,9 @@ module.exports = async function (context) {
 
     // 将提示词写入临时文件
     const workspacePath = path.join(context._vaalRoot, '_workspace', 'split');
-    const promptFile = path.join(workspacePath, 'parse-modules-prompt.tmp.md');
+    const promptsDir = path.join(workspacePath, '.prompts');
+    fs.mkdirSync(promptsDir, { recursive: true });
+    const promptFile = path.join(promptsDir, 'parse-modules-prompt.tmp.md');
     fs.writeFileSync(promptFile, prompt, 'utf-8');
 
     // 输出文件

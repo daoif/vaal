@@ -11,6 +11,7 @@ module.exports = async function (context) {
     console.log('  → 合并任务...');
 
     const paths = context._paths || {};
+    context._errors = context._errors || [];
     const tasksDraftPath = path.join(context._vaalRoot, paths.tasksDraft || '_workspace/split/tasks-draft');
 
     if (!fs.existsSync(tasksDraftPath)) {
@@ -23,11 +24,30 @@ module.exports = async function (context) {
         .sort();
 
     let allTasks = [];
+    const duplicates = [];
+    const seenTaskIds = new Map();
 
     for (const file of files) {
         const content = fs.readFileSync(path.join(tasksDraftPath, file), 'utf-8');
         const tasks = parseTasks(content);
+        for (const task of tasks) {
+            const prevFile = seenTaskIds.get(task.id);
+            if (prevFile) {
+                duplicates.push({ id: task.id, firstFile: prevFile, secondFile: file });
+            } else {
+                seenTaskIds.set(task.id, file);
+            }
+        }
         allTasks = allTasks.concat(tasks);
+    }
+
+    if (duplicates.length > 0) {
+        console.log(`  → 错误: 检测到重复任务 ID (${duplicates.length} 处)，请先修复后再合并`);
+        duplicates.slice(0, 20).forEach(d => {
+            console.log(`    - ${d.id}: ${d.firstFile} <-> ${d.secondFile}`);
+        });
+        context._errors.push({ slot: 'merge-tasks', error: '检测到重复任务 ID', duplicates });
+        return { stop: true };
     }
 
     context.allTasks = allTasks;

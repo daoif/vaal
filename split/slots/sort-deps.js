@@ -8,15 +8,20 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = async function (context) {
-    console.log('  → 分析依赖关系...');
+    console.log('  → 分析依赖关系...');    
 
-    const tasks = context.allTasks || [];
+    const tasks = context.allTasks || [];  
+    context._errors = context._errors || [];
 
     // 构建依赖图
     const depGraph = {};
     const taskMap = {};
+    const duplicates = [];
 
     for (const task of tasks) {
+        if (taskMap[task.id]) {
+            duplicates.push(task.id);
+        }
         taskMap[task.id] = task;
         depGraph[task.id] = [];
 
@@ -28,8 +33,15 @@ module.exports = async function (context) {
         }
     }
 
+    if (duplicates.length > 0) {
+        const unique = Array.from(new Set(duplicates));
+        console.log(`  → 错误: 检测到重复任务 ID (${unique.length} 个): ${unique.slice(0, 10).join(', ')}${unique.length > 10 ? ' ...' : ''}`);
+        context._errors.push({ slot: 'sort-deps', error: '检测到重复任务 ID', duplicates: unique });
+        return { stop: true };
+    }
+
     // 拓扑排序
-    const sorted = topologicalSort(Object.keys(depGraph), depGraph);
+    const sorted = topologicalSort(Object.keys(depGraph), depGraph);      
 
     if (!sorted) {
         console.log('  → 警告: 检测到循环依赖');

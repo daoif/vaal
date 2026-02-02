@@ -30,15 +30,21 @@ module.exports = async function (context) {
 
     const template = fs.readFileSync(templatePath, 'utf-8');
 
+    const moduleNumRaw = String(mod.id || '').split('-')[1];
+    const moduleNum = Number.parseInt(moduleNumRaw, 10);
+    const moduleIndex2 = Number.isFinite(moduleNum) ? String(moduleNum).padStart(2, '0') : String(context._currentModuleIndex + 1).padStart(2, '0');
+
     // 替换占位符
     const prompt = template
         .replace(/\{\{MODULE_ID\}\}/g, mod.id.toUpperCase())
-        .replace(/\{\{MODULE_INDEX\}\}/g, String(context._currentModuleIndex + 1))
+        .replace(/\{\{MODULE_INDEX\}\}/g, moduleIndex2)
         .replace('{{MODULE_CONTENT}}', mod.content);
 
     // 将提示词写入临时文件
     const workspacePath = path.join(context._vaalRoot, '_workspace', 'split');
-    const promptFile = path.join(workspacePath, `gen-tasks-${mod.id}-prompt.tmp.md`);
+    const promptsDir = path.join(workspacePath, '.prompts');
+    fs.mkdirSync(promptsDir, { recursive: true });
+    const promptFile = path.join(promptsDir, `gen-tasks-${mod.id}-prompt.tmp.md`);
     fs.writeFileSync(promptFile, prompt, 'utf-8');
 
     // 输出文件

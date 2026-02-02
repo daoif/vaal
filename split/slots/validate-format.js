@@ -42,6 +42,19 @@ module.exports = async function (context) {
         ids.push(id);
     }
 
+    // 检查任务 ID 数字部分是否满足 4 位（MMTT）
+    const badIds = [];
+    const idMatches2 = content.matchAll(/\[(TEST|IMPL|FIX|REFACTOR|DOC)-(\d+)\]/g);
+    for (const match of idMatches2) {
+        const num = match[2];
+        if (num.length !== 4) {
+            badIds.push(`${match[1]}-${num}`);
+        }
+    }
+    if (badIds.length > 0) {
+        errors.push(`任务 ID 数字部分必须为 4 位（MMTT），发现: ${badIds.slice(0, 10).join(', ')}${badIds.length > 10 ? ' ...' : ''}`);
+    }
+
     // 检查是否有关联模块
     if (!content.includes('**关联模块:**') && !content.includes('**关联模块：**')) {
         errors.push('任务缺少关联模块标记');

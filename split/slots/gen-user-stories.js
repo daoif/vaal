@@ -44,7 +44,9 @@ module.exports = async function (context) {
     const prompt = template.replace('{{MODULES_SUMMARY}}', modulesSummary);
 
     const workspacePath = path.join(context._vaalRoot, '_workspace', 'split');
-    const promptFile = path.join(workspacePath, 'user-stories-prompt.tmp.md');
+    const promptsDir = path.join(workspacePath, '.prompts');
+    fs.mkdirSync(promptsDir, { recursive: true });
+    const promptFile = path.join(promptsDir, 'user-stories-prompt.tmp.md');
     fs.writeFileSync(promptFile, prompt, 'utf-8');
 
     const outputFile = path.join(context._vaalRoot, paths.userStories || '_workspace/split/user-stories.md');
