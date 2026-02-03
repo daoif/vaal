@@ -9,7 +9,7 @@
 
 AI 自动化任务循环工具
 
-[![Version](https://img.shields.io/badge/version-v0.0.4-blue.svg)](https://github.com/daoif/vaal)
+[![Version](https://img.shields.io/badge/version-v0.0.5-blue.svg)](https://github.com/daoif/vaal)
 [![Node](https://img.shields.io/badge/node-%3E%3D14-green.svg)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 <p align="center">
