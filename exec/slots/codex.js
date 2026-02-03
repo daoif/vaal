@@ -4,9 +4,7 @@
  * 职责：使用 Codex CLI 执行任务
  */
 
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const execAsync = promisify(exec);
+const { execSync } = require('child_process');
 
 module.exports = async function (context) {
     const task = context.currentTask;
@@ -34,26 +32,18 @@ module.exports = async function (context) {
     }
 
     try {
-        const { stdout, stderr } = await execAsync(command, {
+        execSync(command, {
             cwd: context.projectRoot,
-            timeout: 600000,
-            maxBuffer: 50 * 1024 * 1024
+            stdio: 'inherit',
+            timeout: 1800000
         });
-
-        context.aiResult = {
-            success: true,
-            stdout,
-            stderr
-        };
 
         console.log('  → Codex 执行完成');
         return {};
 
     } catch (error) {
-        context.aiResult = {
-            success: false,
-            error: error.message
-        };
+        context._errors = context._errors || [];
+        context._errors.push({ slot: 'exec/slots/codex.js', error: error.message });
 
         console.log(`  → Codex 执行失败: ${error.message}`);
         return { stop: true };

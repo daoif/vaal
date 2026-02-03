@@ -7,16 +7,49 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports = async function (context) {
-    console.log('  → 分析依赖关系...');    
+function normalizeModuleId(moduleId) {
+    const match = String(moduleId || '')
+        .trim()
+        .toUpperCase()
+        .match(/^MOD-(\d{3,4})$/);
+    if (!match) return null;
+    return `MOD-${String(match[1]).padStart(4, '0')}`;
+}
 
-    const tasks = context.allTasks || [];  
+function moduleIdToIndex(moduleId) {
+    const normalized = normalizeModuleId(moduleId);
+    if (!normalized) return null;
+    return normalized.split('-')[1];
+}
+
+function taskIdToModuleIndex(taskId) {
+    const match = String(taskId || '')
+        .trim()
+        .toUpperCase()
+        .match(/^[A-Z]+-(\d{4})-\d{4}$/);
+    return match ? match[1] : null;
+}
+
+module.exports = async function (context) { 
+    console.log('  → 分析依赖关系...');     
+
+    const tasks = context.allTasks || [];   
     context._errors = context._errors || [];
 
     // 构建依赖图
     const depGraph = {};
     const taskMap = {};
     const duplicates = [];
+
+    // 用于展开 MOD-xxxx：先建立模块编号到任务列表的索引
+    const tasksByModuleIndex = new Map(); // MMMM -> [taskId...]
+    for (const task of tasks) {
+        const moduleIndex = taskIdToModuleIndex(task.id);
+        if (!moduleIndex) continue;
+        const list = tasksByModuleIndex.get(moduleIndex) || [];
+        list.push(task.id);
+        tasksByModuleIndex.set(moduleIndex, list);
+    }
 
     for (const task of tasks) {
         if (taskMap[task.id]) {
@@ -28,8 +61,42 @@ module.exports = async function (context) {
         // 解析依赖
         const depMatch = task.content.match(/\*\*依赖[：:]\*\*\s*\n([\s\S]*?)(?=\n\s*\*\*|$)/);
         if (depMatch) {
-            const deps = depMatch[1].match(/\b[A-Z]+-\d{4}-\d{4}\b/g) || [];
-            depGraph[task.id] = deps;
+            const depBlock = depMatch[1];
+
+            const taskDeps = depBlock.match(/\b[A-Z]+-\d{4}-\d{4}\b/g) || [];
+            const moduleDepsRaw = depBlock.match(/\bMOD-\d{3,4}\b/gi) || [];
+
+            const expanded = [];
+            const missingModuleDeps = [];
+            for (const moduleDep of moduleDepsRaw) {
+                const moduleIndex = moduleIdToIndex(moduleDep);
+                const normalized = normalizeModuleId(moduleDep) || String(moduleDep).toUpperCase();
+
+                if (!moduleIndex) {
+                    missingModuleDeps.push(normalized);
+                    continue;
+                }
+
+                const moduleTasks = tasksByModuleIndex.get(moduleIndex) || [];
+                if (moduleTasks.length === 0) {
+                    missingModuleDeps.push(normalized);
+                    continue;
+                }
+
+                expanded.push(...moduleTasks);
+            }
+
+            depGraph[task.id] = [...new Set([...taskDeps, ...expanded])];
+
+            // 不直接 stop：只记录问题，保证 split 仍能产出任务列表
+            if (missingModuleDeps.length > 0) {
+                context._errors.push({
+                    slot: 'sort-deps',
+                    error: '模块依赖无法展开（找不到对应模块任务）',
+                    taskId: task.id,
+                    modules: [...new Set(missingModuleDeps)]
+                });
+            }
         }
     }
 

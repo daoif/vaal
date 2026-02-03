@@ -14,12 +14,38 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * 从文本中提取任务 ID（如 IMPL-001）
+ * 将模块 ID 规范化为 4 位（如 MOD-001 -> MOD-0001）
+ */
+function normalizeModuleId(moduleId) {
+    const match = String(moduleId || '')
+        .trim()
+        .toUpperCase()
+        .match(/^MOD-(\d{3,4})$/);
+    if (!match) return null;
+    return `MOD-${String(match[1]).padStart(4, '0')}`;
+}
+
+/**
+ * 从文本中提取模块 ID（如 MOD-001 / MOD-0001）
+ */
+function extractModuleIds(text) {
+    if (!text) return [];
+    const matches = String(text).match(/\bMOD-\d{3,4}\b/gi) || [];
+    const normalized = matches.map(normalizeModuleId).filter(Boolean);
+    return [...new Set(normalized)];
+}
+
+/**
+ * 从文本中提取任务 ID（如 TEST-0001-0001 / IMPL-0001-0001）
+ *
+ * 注意：这里刻意排除模块 ID（MOD-xxxx）。
  */
 function extractTaskIds(text) {
     if (!text) return [];
-    const matches = String(text).match(/\b(?:[A-Z]+-\d{4}-\d{4}|[A-Z]+-\d+)\b/gi);
-    return matches ? matches.map(id => id.toUpperCase()) : [];
+    const matches =
+        String(text).match(/\b(?:[A-Z]+-\d{4}-\d{4}|[A-Z]+-\d+)\b/gi) || [];
+    const upper = matches.map(id => String(id).toUpperCase());
+    return upper.filter(id => !/^MOD-\d+$/i.test(id));
 }
 
 /**
@@ -28,7 +54,8 @@ function extractTaskIds(text) {
 function extractDependenciesFromTaskContent(content) {
     const lines = String(content || '').split('\n');
     let inDependencies = false;
-    const deps = [];
+    const taskIds = [];
+    const moduleIds = [];
 
     for (const line of lines) {
         const trimmed = line.trim();
@@ -43,7 +70,8 @@ function extractDependenciesFromTaskContent(content) {
 
         if (isDepsHeader) {
             inDependencies = true;
-            deps.push(...extractTaskIds(trimmed));
+            taskIds.push(...extractTaskIds(trimmed));
+            moduleIds.push(...extractModuleIds(trimmed));
             continue;
         }
 
@@ -66,12 +94,20 @@ function extractDependenciesFromTaskContent(content) {
                 continue;
             }
 
-            deps.push(...extractTaskIds(trimmed));
+            taskIds.push(...extractTaskIds(trimmed));
+            moduleIds.push(...extractModuleIds(trimmed));
         }
     }
 
     // 清洗：去重 + 去空格 + 大写
-    return [...new Set(deps.map(d => String(d).trim().toUpperCase()).filter(Boolean))];
+    const uniqTaskIds = [
+        ...new Set(taskIds.map(d => String(d).trim().toUpperCase()).filter(Boolean))
+    ];
+    const uniqModuleIds = [
+        ...new Set(moduleIds.map(d => String(d).trim().toUpperCase()).filter(Boolean))
+    ];
+
+    return { taskIds: uniqTaskIds, moduleIds: uniqModuleIds };
 }
 
 module.exports = async function (context) {
@@ -238,10 +274,14 @@ module.exports = async function (context) {
     // 预解析每个任务的依赖列表（供 read-next 判断“可执行”）
     for (const task of tasks) {
         const deps = extractDependenciesFromTaskContent(task.rawContent);
-        task.dependencies = deps;
+        const depTaskIds = Array.isArray(deps) ? deps : deps.taskIds;
+        const depModuleIds = Array.isArray(deps) ? [] : deps.moduleIds;
+
+        task.dependencies = depTaskIds;
+        task.moduleDependencies = depModuleIds;
 
         // 禁止自依赖
-        if (deps.includes(task.id)) {
+        if (depTaskIds.includes(task.id)) {
             console.error(`  ❌ 任务 ${task.id} 存在自依赖（依赖了自己），请修复任务列表`);
             context.tasks = tasks;
             context.taskPath = taskPath;

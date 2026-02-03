@@ -32,12 +32,14 @@ module.exports = async function (context) {
 
     const moduleNumRaw = String(mod.id || '').split('-')[1];
     const moduleNum = Number.parseInt(moduleNumRaw, 10);
-    const moduleIndex2 = Number.isFinite(moduleNum) ? String(moduleNum).padStart(2, '0') : String(context._currentModuleIndex + 1).padStart(2, '0');
+    const moduleIndex4 = Number.isFinite(moduleNum)
+        ? String(moduleNum).padStart(4, '0')
+        : String(context._currentModuleIndex + 1).padStart(4, '0');
 
     // 替换占位符
     const prompt = template
         .replace(/\{\{MODULE_ID\}\}/g, mod.id.toUpperCase())
-        .replace(/\{\{MODULE_INDEX\}\}/g, moduleIndex2)
+        .replace(/\{\{MODULE_INDEX\}\}/g, moduleIndex4)
         .replace('{{MODULE_CONTENT}}', mod.content);
 
     // 将提示词写入临时文件
