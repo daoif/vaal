@@ -206,7 +206,9 @@ module.exports = async function (context) {
     context.moduleName = moduleName;
 
     // 7. 构建约束提示
-    let prompt = '';
+    let prompt = `\n\n【系统约束】
+- 代码位置由项目架构决定，不由验证覆盖范围决定
+- 如果验证命令不覆盖目标目录，需同时更新验证配置`;
 
     if (constraints.hard.length) {
         prompt += '\n\n【硬约束（必须满足）】';
