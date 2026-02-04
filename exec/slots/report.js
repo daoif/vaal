@@ -1,6 +1,6 @@
 /**
  * VAAL 槽位脚本：生成报告
- * 
+ *
  * 职责：输出执行统计，写入 progress.txt
  */
 
@@ -53,12 +53,13 @@ async function writeProgress(context, startTime, endTime, totalDuration, paths) 
 
     const stats = context.stats || {};
     const records = context.taskRecords || [];
+    const errors = context._errors || [];
 
     // 构建本次执行记录
     let entry = `\n## ${startTime.toLocaleString('zh-CN')}\n\n`;
 
-    // 如果有任务记录，输出表格
-    if (records.length > 0) {
+    // 如果有任务记录或错误记录，输出表格
+    if (records.length > 0 || errors.length > 0) {
         entry += `| 时间 | 任务 | 状态 | 耗时 | 备注 |\n`;
         entry += `|------|------|------|------|------|\n`;
 
@@ -68,13 +69,26 @@ async function writeProgress(context, startTime, endTime, totalDuration, paths) 
                 : record.taskName;
             entry += `| ${record.time} | [${record.taskId}] ${taskName} | ${record.status} | ${record.duration} | ${record.note} |\n`;
         }
+
+        for (const err of errors) {
+            const time = new Date().toTimeString().split(' ')[0];
+            entry += `| ${time} | ${err.slot} | ❌ 失败 | - | ${String(err.error || '').substring(0, 120)} |\n`;
+        }
     }
 
-    // 添加失败记录
-    if (context._errors && context._errors.length > 0) {
-        for (const err of context._errors) {
-            const time = new Date().toTimeString().split(' ')[0];
-            entry += `| ${time} | ${err.slot} | ❌ 失败 | - | ${err.error.substring(0, 30)} |\n`;
+    // 验证失败详情（节选）
+    if (context.validationFailures && context.validationFailures.length > 0) {
+        entry += `\n### 验证失败详情（节选）\n\n`;
+        for (const item of context.validationFailures) {
+            const id = item.taskId || '(unknown)';
+            const name = item.taskName || '';
+            const attempts = item.attempts || 0;
+            entry += `- ${id} ${name}（attempts: ${attempts}）\n\n`;
+            if (item.feedback) {
+                entry += `${truncate(item.feedback, 2000)}\n\n`;
+            } else {
+                entry += `(无详细输出)\n\n`;
+            }
         }
     }
 
@@ -108,4 +122,11 @@ function formatDuration(ms) {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.round((ms % 60000) / 1000);
     return `${minutes}m ${seconds}s`;
+}
+
+function truncate(text, limit) {
+    if (!text) return '';
+    const str = String(text);
+    if (str.length <= limit) return str;
+    return `${str.slice(0, limit)}\n... (truncated, total ${str.length} chars)`;
 }

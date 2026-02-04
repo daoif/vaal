@@ -9,13 +9,16 @@ const { promisify } = require('util');
 const execAsync = promisify(exec);
 
 module.exports = async function (context) {
-    const task = context.currentTask;
+    const task = context.currentTask;      
     if (!task) return {};
 
     // 组合任务描述和约束提示
     let prompt = task.task;
-    if (context.constraintPrompt) {
+    if (context.constraintPrompt) {        
         prompt += context.constraintPrompt;
+    }
+    if (context.validationFeedback) {
+        prompt += `\n\n# Validation Feedback (fix these and re-run validation)\n${context.validationFeedback}`;
     }
 
     // 转义特殊字符
@@ -32,11 +35,14 @@ module.exports = async function (context) {
     if (context.constraintPrompt) {
         console.log(`  → 已附加约束提示`);
     }
+    if (context.validationFeedback) {
+        console.log(`  → 已附加验证反馈`);
+    }
 
     try {
         const { stdout, stderr } = await execAsync(command, {
             cwd: context.projectRoot,
-            timeout: 600000,
+            timeout: 1800000,
             maxBuffer: 50 * 1024 * 1024
         });
 

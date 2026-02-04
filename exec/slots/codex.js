@@ -6,14 +6,17 @@
 
 const { execSync } = require('child_process');
 
-module.exports = async function (context) {
+module.exports = async function (context) {   
     const task = context.currentTask;
     if (!task) return {};
 
     // 组合任务描述和约束提示
     let prompt = task.task;
     if (context.constraintPrompt) {
-        prompt += context.constraintPrompt;
+        prompt += context.constraintPrompt;   
+    }
+    if (context.validationFeedback) {
+        prompt += `\n\n# Validation Feedback (fix these and re-run validation)\n${context.validationFeedback}`;
     }
 
     // 转义特殊字符
@@ -29,6 +32,9 @@ module.exports = async function (context) {
     console.log(`  → 执行: codex exec --yolo ...`);
     if (context.constraintPrompt) {
         console.log(`  → 已附加约束提示`);
+    }
+    if (context.validationFeedback) {
+        console.log(`  → 已附加验证反馈`);
     }
 
     try {

@@ -39,6 +39,8 @@
 | `build` | string | - | 构建命令（可选） |
 | `custom` | string[] | [] | 其他自定义验证命令 |
 | `required` | string[] | [] | 必须通过的验证项（通常为 ["test"]） |
+| `repair.enabled` | boolean | true | 验证失败后是否自动修复（回调 execute 后再 validate） |
+| `repair.maxAttempts` | number | 3 | 单个任务最多执行/修复次数（包含首次执行） |
 
 示例：
 ```json
@@ -46,7 +48,11 @@
   "validation": {
     "test": "npm test",
     "lint": "npm run lint",
-    "required": ["test", "lint"]
+    "required": ["test", "lint"],
+    "repair": {
+      "enabled": true,
+      "maxAttempts": 3
+    }
   }
 }
 ```
@@ -97,6 +103,7 @@ commitStyle 可选值：
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `maxIterations` | number | 50 | 最大任务数限制 |
+| `stopOnFailure` | boolean | true | 任务失败后是否停止整个调度（验证失败且修复次数耗尽时生效） |
 
 ---
 
@@ -112,8 +119,13 @@ commitStyle 可选值：
   "validation": {
     "test": "npm test",
     "lint": "npm run lint",
-    "required": ["test"]
+    "required": ["test"],
+    "repair": {
+      "enabled": true,
+      "maxAttempts": 3
+    }
   },
+  "stopOnFailure": true,
   "git": {
     "autoCommit": false,
     "autoPush": false,

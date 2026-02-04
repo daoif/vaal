@@ -12,6 +12,33 @@
 const path = require('path');
 const fs = require('fs');
 
+function firstNonEmptyLine(text) {
+    if (!text) return '';
+    const lines = String(text).split(/\r?\n/);
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed) return trimmed;
+    }
+    return '';
+}
+
+function summarizeValidationFailure(validateResult) {
+    if (!validateResult || validateResult.passed) return '';
+
+    const parts = [];
+    const test = validateResult.details && validateResult.details.test;
+    const lint = validateResult.details && validateResult.details.lint;
+
+    if (test && test.status === 'failed') {
+        parts.push(`test: ${firstNonEmptyLine(test.stderr) || firstNonEmptyLine(test.stdout) || test.errorMessage || 'failed'}`);
+    }
+    if (lint && lint.status === 'failed') {
+        parts.push(`lint: ${firstNonEmptyLine(lint.stderr) || firstNonEmptyLine(lint.stdout) || lint.errorMessage || 'failed'}`);
+    }
+
+    return parts.join(' | ');
+}
+
 // ============================================================
 // 核心：槽位调用
 // ============================================================
@@ -73,6 +100,12 @@ async function main() {
     // 加载配置
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
+    const validationConfig = config.validation || {};
+    const repairConfig = validationConfig.repair || {};
+    const repairEnabled = repairConfig.enabled !== false;
+    const repairMaxAttempts = Number.isInteger(repairConfig.maxAttempts) ? repairConfig.maxAttempts : 3;
+    const stopOnFailure = config.stopOnFailure !== false;
+
     // 初始化共享上下文
     const context = {
         _vaalRoot: vaalRoot,
@@ -126,7 +159,135 @@ async function main() {
 
         for (const slotName of pipeline.loop || []) {
             console.log(`[VAAL] 调用槽位: ${slotName}`);
+
+            // 统一：每次选出新任务时，重置本轮“修复上下文”
+            if (slotName === 'readNext') {
+                const result = await callSlot(slots[slotName], context);
+                if (result.break || result.stop) {
+                    if (result.break) {
+                        console.log('[VAAL] 跳出当前迭代');
+                        break;
+                    }
+                    if (result.stop) {
+                        console.log('[VAAL] 停止循环');
+                        context.stopped = true;
+                        context.hasMore = false;
+                        break;
+                    }
+                }
+
+                if (context.currentTask) {
+                    context.validationFeedback = '';
+                    context.validateResult = null;
+                    context.currentTask._executeAttempts = 0;
+                }
+                continue;
+            }
+
+            // execute：记录本任务执行尝试次数（用于修复重试）
+            if (slotName === 'execute' && context.currentTask) {
+                context.currentTask._executeAttempts = (context.currentTask._executeAttempts || 0) + 1;
+                if (context.currentTask._executeAttempts > 1) {
+                    console.log(
+                        `  → 自动修复：第 ${context.currentTask._executeAttempts}/${repairMaxAttempts} 次执行尝试`
+                    );
+                }
+            }
+
             const result = await callSlot(slots[slotName], context);
+
+            // validate：失败时自动回调 execute 做修复，再次 validate
+            if (slotName === 'validate') {
+                const validationPassed = result.validationPassed ?? context.validateResult?.passed ?? true;
+
+                if (!validationPassed) {
+                    const task = context.currentTask;
+                    const attempts = task ? task._executeAttempts || 0 : 0;
+
+                    if (!repairEnabled || !task) {
+                        console.log('[VAAL] 验证未通过，未启用自动修复');
+                    } else if (attempts >= repairMaxAttempts) {
+                        console.log(`[VAAL] 验证未通过，已达到最大修复次数: ${repairMaxAttempts}`);
+                    } else {
+                        // 从“当前状态”开始修复：重复 execute → validate，直到通过或达到上限
+                        let passed = false;
+                        while (task._executeAttempts < repairMaxAttempts) {
+                            console.log(`[VAAL] 验证未通过，开始自动修复（${task._executeAttempts + 1}/${repairMaxAttempts}）`);
+
+                            // 再次 execute（携带 validationFeedback 给 AI）
+                            task._executeAttempts = (task._executeAttempts || 0) + 1;
+                            const execResult = await callSlot(slots.execute, context);
+                            if (execResult.stop) {
+                                console.log('[VAAL] 停止循环');
+                                context.stopped = true;
+                                context.hasMore = false;
+                                break;
+                            }
+
+                            // 再次 validate
+                            const validateResult = await callSlot(slots.validate, context);
+                            passed = validateResult.validationPassed ?? context.validateResult?.passed ?? false;
+                            if (passed) break;
+                        }
+
+                        if (passed) {
+                            context.validationFeedback = '';
+                            continue;
+                        }
+                    }
+
+                    // 到这里代表：验证最终仍失败（或没启用修复）
+                    const taskId = task ? task.id : '(unknown)';
+                    const taskName = task ? task.task.substring(0, 40) : 'unknown task';
+                    const endTime = new Date();
+                    const startTime = (task && task._startTime) ? task._startTime : endTime;
+                    const durationMs = endTime - startTime;
+                    const validationSummary = summarizeValidationFailure(context.validateResult);
+
+                    context.stats.failed++;
+                    context.taskRecords = context.taskRecords || [];
+                    context.taskRecords.push({
+                        time: endTime.toTimeString().split(' ')[0],
+                        taskId,
+                        taskName,
+                        status: '❌ 失败',
+                        duration: `${Math.round(durationMs / 1000)}s`,
+                        note: validationSummary || 'validation failed'
+                    });
+
+                    context._errors = context._errors || [];
+                    context._errors.push({
+                        slot: 'exec/slots/validate.js',
+                        error: validationSummary
+                            ? `Task ${taskId}: ${validationSummary}`
+                            : `Validation failed for task ${taskId}`
+                    });
+
+                    context.validationFailures = context.validationFailures || [];
+                    context.validationFailures.push({
+                        taskId,
+                        taskName,
+                        attempts: task ? task._executeAttempts || 0 : 0,
+                        feedback: context.validationFeedback || ''
+                    });
+
+                    if (task) task.status = 'failed';
+
+                    if (stopOnFailure) {
+                        console.log('[VAAL] 停止循环');
+                        context.stopped = true;
+                        context.hasMore = false;
+                    } else {
+                        console.log('[VAAL] 当前任务验证失败，继续下一个任务');
+                        context.currentTask = null;
+                    }
+
+                    break;
+                }
+
+                // 通过：避免把上一次失败的反馈带到后续任务
+                context.validationFeedback = '';
+            }
 
             if (result.break) {
                 console.log('[VAAL] 跳出当前迭代');

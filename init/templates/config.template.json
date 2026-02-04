@@ -36,8 +36,13 @@
     "validation": {
         "test": "",
         "lint": "",
-        "required": []
+        "required": [],
+        "repair": {
+            "enabled": true,
+            "maxAttempts": 3
+        }
     },
+    "stopOnFailure": true,
     "git": {
         "autoCommit": false,
         "autoPush": false,
